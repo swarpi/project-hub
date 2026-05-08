@@ -1,0 +1,87 @@
+:root {
+  --hub-font: 'Space Grotesk', sans-serif;
+  --hub-mono: 'JetBrains Mono', monospace;
+
+  --hub-bg: oklch(0.97 0.005 265);
+  --hub-surface: oklch(1 0 0);
+  --hub-text: oklch(0.15 0.02 265);
+  --hub-text-sec: oklch(0.45 0.02 265);
+  --hub-text-dim: oklch(0.65 0.015 265);
+  --hub-border: oklch(0.90 0.01 265);
+  --hub-accent: oklch(0.45 0.18 265);
+  --hub-accent-light: oklch(0.93 0.04 265);
+  --hub-radius: 12px;
+
+  --wf-bg: oklch(0.97 0.005 265);
+  --wf-card: oklch(1 0 0);
+  --wf-card-hover: oklch(0.98 0.005 265);
+  --wf-text: oklch(0.15 0.02 265);
+  --wf-text-sec: oklch(0.45 0.02 265);
+  --wf-text-dim: oklch(0.65 0.015 265);
+  --wf-border: oklch(0.90 0.01 265);
+  --wf-border-strong: oklch(0.80 0.02 265);
+  --wf-shadow: oklch(0 0 0 / 0.06);
+  --wf-shadow-strong: oklch(0 0 0 / 0.15);
+  --wf-label-bg: oklch(0.97 0.005 265 / 0.9);
+  --wf-dot: oklch(0.72 0.04 265);
+  --wf-accent: oklch(0.45 0.18 265);
+  --wf-accent-light: oklch(0.93 0.04 265);
+  --wf-accent-dim: oklch(0.45 0.18 265 / 0.12);
+}
+
+[data-theme="dark"] {
+  --hub-bg: oklch(0.12 0.01 265);
+  --hub-surface: oklch(0.17 0.01 265);
+  --hub-text: oklch(0.94 0.01 265);
+  --hub-text-sec: oklch(0.65 0.01 265);
+  --hub-text-dim: oklch(0.45 0.01 265);
+  --hub-border: oklch(0.25 0.01 265);
+  --hub-accent: oklch(0.65 0.15 265);
+  --hub-accent-light: oklch(0.25 0.04 265);
+  --hub-radius: 12px;
+
+  --wf-bg: oklch(0.12 0.01 265);
+  --wf-card: oklch(0.17 0.01 265);
+  --wf-card-hover: oklch(0.20 0.01 265);
+  --wf-text: oklch(0.94 0.01 265);
+  --wf-text-sec: oklch(0.65 0.01 265);
+  --wf-text-dim: oklch(0.45 0.01 265);
+  --wf-border: oklch(0.25 0.01 265);
+  --wf-border-strong: oklch(0.35 0.02 265);
+  --wf-shadow: oklch(0 0 0 / 0.2);
+  --wf-shadow-strong: oklch(0 0 0 / 0.4);
+  --wf-label-bg: oklch(0.15 0.01 265 / 0.9);
+  --wf-dot: oklch(0.35 0.02 265);
+  --wf-accent: oklch(0.65 0.15 265);
+  --wf-accent-light: oklch(0.25 0.04 265);
+  --wf-accent-dim: oklch(0.65 0.15 265 / 0.15);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --hub-bg: oklch(0.12 0.01 265);
+    --hub-surface: oklch(0.17 0.01 265);
+    --hub-text: oklch(0.94 0.01 265);
+    --hub-text-sec: oklch(0.65 0.01 265);
+    --hub-text-dim: oklch(0.45 0.01 265);
+    --hub-border: oklch(0.25 0.01 265);
+    --hub-accent: oklch(0.65 0.15 265);
+    --hub-accent-light: oklch(0.25 0.04 265);
+
+    --wf-bg: oklch(0.12 0.01 265);
+    --wf-card: oklch(0.17 0.01 265);
+    --wf-card-hover: oklch(0.20 0.01 265);
+    --wf-text: oklch(0.94 0.01 265);
+    --wf-text-sec: oklch(0.65 0.01 265);
+    --wf-text-dim: oklch(0.45 0.01 265);
+    --wf-border: oklch(0.25 0.01 265);
+    --wf-border-strong: oklch(0.35 0.02 265);
+    --wf-shadow: oklch(0 0 0 / 0.2);
+    --wf-shadow-strong: oklch(0 0 0 / 0.4);
+    --wf-label-bg: oklch(0.15 0.01 265 / 0.9);
+    --wf-dot: oklch(0.35 0.02 265);
+    --wf-accent: oklch(0.65 0.15 265);
+    --wf-accent-light: oklch(0.25 0.04 265);
+    --wf-accent-dim: oklch(0.65 0.15 265 / 0.15);
+  }
+}

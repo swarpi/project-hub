@@ -1,0 +1,18 @@
+@import './reset.css';
+@import './tokens.css';
+
+body {
+  font-family: var(--hub-font);
+  background: var(--hub-bg);
+  color: var(--hub-text);
+}
+
+#root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+::selection {
+  background: var(--hub-accent-light);
+}
