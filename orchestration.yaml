@@ -1,0 +1,194 @@
+name: Hybrid Agentic Workflow
+description: >
+  Agents own the process (decisions, planning, review, maintenance).
+  Claude Code plan mode owns execution (implementing tickets).
+
+agents:
+  - id: architect
+    kind: decision
+    title: Architect
+    tagline: Shapes the system before anything is built
+    description: Asks clarifying questions and explores alternatives before any code is written. Produces Architecture Decision Records (ADRs) and detailed specs.
+    outputs:
+      - ADRs
+      - Specs
+      - Constraints
+    color: indigo
+    docLink: /.claude/agents/architect.md
+
+  - id: system-architect
+    kind: decision
+    title: System Architect
+    tagline: Maps the runtime system architecture
+    description: Identifies components, connections, protocols, and tiers. Produces a structured architecture.yaml that documents how the system fits together.
+    outputs:
+      - architecture.yaml
+      - Component map
+      - Connection diagram
+    color: green
+    docLink: /.claude/agents/system-architect.md
+
+  - id: planner
+    kind: planning
+    title: Planner
+    tagline: Decomposes specs into plan-mode-sized tickets
+    description: Takes ADRs and specs as input. Decomposes work into discrete tickets scoped for a single Claude Code plan mode session.
+    outputs:
+      - Tickets
+      - Milestones
+      - Criteria
+    color: indigo
+    docLink: /.claude/agents/planner.md
+
+  - id: plan-mode
+    kind: execution
+    title: Plan Mode
+    tagline: Claude Code's built-in plan-then-execute cycle
+    description: >
+      Not a custom agent — this is Claude Code's native plan mode (shift+tab).
+      It explores the codebase, proposes a plan, gets approval, then implements.
+      Each ticket from the Planner is executed as a separate plan mode session.
+    outputs:
+      - Code
+      - PRs
+    color: indigo
+    builtin: true
+
+  - id: executor
+    kind: execution
+    title: Executor (fallback)
+    tagline: Guided execution with strict verification
+    description: >
+      Fallback for when plan mode is unavailable or when enforced verification
+      discipline is needed. Most tickets should use plan mode instead.
+    outputs:
+      - Code
+      - PRs
+      - Plan docs
+    color: gray
+    docLink: /.claude/agents/executor.md
+
+  - id: qa-tester
+    kind: validation
+    title: QA Tester
+    tagline: Writes automated tests for completed features
+    description: Writes automated tests after implementation. Covers acceptance criteria, edge cases, and regression scenarios.
+    outputs:
+      - Tests
+      - Coverage report
+      - Test plan
+    color: green
+    docLink: /.claude/agents/qa-tester.md
+
+  - id: reviewer
+    kind: validation
+    title: Reviewer
+    tagline: Validates against acceptance criteria
+    description: Validates code and tests against the original acceptance criteria. Flags issues back for fixing and provides final approval.
+    outputs:
+      - Feedback
+      - Approval
+      - Notes
+    color: amber
+    docLink: /.claude/agents/reviewer.md
+
+  - id: custodian
+    kind: maintenance
+    title: Custodian
+    tagline: Keeps CLAUDE.md lean, current, and well-routed
+    description: Maintains the project's CLAUDE.md file — adds new patterns and gotchas, removes stale entries, and routes large content to external files. Enforces a 150–200 line limit.
+    outputs:
+      - Updated CLAUDE.md
+      - Extracted reference files
+    color: blue
+    docLink: /.claude/agents/custodian.md
+
+  - id: summarizer
+    kind: reporting
+    title: Summarizer
+    tagline: Communicates completed work to stakeholders
+    description: Reads tickets, ADRs, specs, git history, and test results to produce concise, non-technical executive summaries.
+    outputs:
+      - Executive summaries
+      - Sprint recaps
+      - Stakeholder reports
+    color: teal
+    docLink: /.claude/agents/summarizer.md
+
+connections:
+  # Process phase: agents produce artifacts
+  - from: architect
+    to: system-architect
+    artifact: ADRs · Specs
+
+  - from: system-architect
+    to: planner
+    artifact: architecture.yaml
+
+  # Execution phase: plan mode implements tickets
+  - from: planner
+    to: plan-mode
+    artifact: Tickets
+    note: Each ticket becomes a separate plan mode session
+
+  # Fallback execution path
+  - from: planner
+    to: executor
+    artifact: Tickets
+    type: fallback
+    note: Use when plan mode is unavailable
+
+  # Validation phase
+  - from: plan-mode
+    to: qa-tester
+    artifact: Code
+
+  - from: executor
+    to: qa-tester
+    artifact: Code
+    type: fallback
+
+  - from: qa-tester
+    to: reviewer
+    artifact: Code · Tests
+
+  # Feedback loops
+  - from: reviewer
+    to: plan-mode
+    artifact: Feedback
+    type: feedback
+    note: Fix issues in a new plan mode session
+
+  - from: reviewer
+    to: executor
+    artifact: Feedback
+    type: feedback
+
+  # Maintenance triggers
+  - from: reviewer
+    to: custodian
+    artifact: Completed work context
+    type: trigger
+
+  - from: reviewer
+    to: summarizer
+    artifact: Completed work context
+    type: trigger
+
+parallelization:
+  description: >
+    The main session can deploy sub-agents for independent, parallelizable work.
+    Sub-agents run in isolation, report back, and the main thread synthesizes results.
+    Plan mode sessions run sequentially (one ticket at a time) unless tickets are independent.
+  model-routing:
+    low-complexity: haiku
+    medium-complexity: sonnet
+    high-complexity: opus
+  default-model: haiku
+  examples:
+    - parallel research across multiple files
+    - running independent test suites simultaneously
+    - independent tickets can be executed in separate plan mode sessions
+    - concurrent verification (browser + console + tests)
+
+layout: diamond

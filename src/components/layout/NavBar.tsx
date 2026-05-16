@@ -6,12 +6,20 @@ const allSections = [
   { id: 'projects', label: 'Projects' },
 ];
 
+const routes = [
+  { hash: '#/', label: 'Hub' },
+  { hash: '#/builder', label: 'Builder' },
+];
+
 interface NavBarProps {
+  activeRoute: string;
   hideSections?: string[];
 }
 
-export default function NavBar({ hideSections = [] }: NavBarProps) {
+export default function NavBar({ activeRoute, hideSections = [] }: NavBarProps) {
   const sections = allSections.filter(s => !hideSections.includes(s.id));
+  const isHub = activeRoute === '/';
+
   const scrollTo = (id: string) => {
     document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
   };
@@ -33,12 +41,13 @@ export default function NavBar({ hideSections = [] }: NavBarProps) {
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: 24 }}>
         <a
-          href="https://swarpi.github.io"
+          href="#/"
           style={{
             fontFamily: 'var(--hub-font)',
             fontSize: 16,
             fontWeight: 700,
             color: 'var(--hub-text)',
+            textDecoration: 'none',
           }}
         >
           swarpi
@@ -60,33 +69,64 @@ export default function NavBar({ hideSections = [] }: NavBarProps) {
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-        {sections.map((s) => (
-          <button
-            key={s.id}
-            onClick={() => scrollTo(s.id)}
-            style={{
-              fontFamily: 'var(--hub-font)',
-              fontSize: 13,
-              fontWeight: 600,
-              color: 'var(--hub-text-dim)',
-              background: 'none',
-              border: 'none',
-              padding: '6px 14px',
-              borderRadius: 100,
-              transition: 'all 0.2s',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = 'var(--hub-accent-light)';
-              e.currentTarget.style.color = 'var(--hub-text)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = 'none';
-              e.currentTarget.style.color = 'var(--hub-text-dim)';
-            }}
-          >
-            {s.label}
-          </button>
-        ))}
+        {routes.map((r) => {
+          const isActive = (r.hash === '#/' && isHub) || (r.hash !== '#/' && activeRoute === r.hash.replace('#', ''));
+          return (
+            <a
+              key={r.hash}
+              href={r.hash}
+              style={{
+                fontFamily: 'var(--hub-font)',
+                fontSize: 13,
+                fontWeight: 600,
+                color: isActive ? 'var(--hub-accent)' : 'var(--hub-text-dim)',
+                background: isActive ? 'var(--hub-accent-light)' : 'none',
+                border: 'none',
+                padding: '6px 14px',
+                borderRadius: 100,
+                transition: 'all 0.2s',
+                textDecoration: 'none',
+              }}
+            >
+              {r.label}
+            </a>
+          );
+        })}
+
+        {isHub && sections.length > 0 && (
+          <>
+            <div style={{ width: 1, height: 20, background: 'var(--hub-border)', margin: '0 8px' }} />
+            {sections.map((s) => (
+              <button
+                key={s.id}
+                onClick={() => scrollTo(s.id)}
+                style={{
+                  fontFamily: 'var(--hub-font)',
+                  fontSize: 13,
+                  fontWeight: 600,
+                  color: 'var(--hub-text-dim)',
+                  background: 'none',
+                  border: 'none',
+                  padding: '6px 14px',
+                  borderRadius: 100,
+                  transition: 'all 0.2s',
+                  cursor: 'pointer',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = 'var(--hub-accent-light)';
+                  e.currentTarget.style.color = 'var(--hub-text)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'none';
+                  e.currentTarget.style.color = 'var(--hub-text-dim)';
+                }}
+              >
+                {s.label}
+              </button>
+            ))}
+          </>
+        )}
+
         <div style={{ width: 1, height: 20, background: 'var(--hub-border)', margin: '0 8px' }} />
         <ThemeToggle />
       </div>

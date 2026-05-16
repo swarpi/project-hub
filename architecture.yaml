@@ -1,0 +1,20 @@
+name: Project Name
+description: One-line description of the system
+
+components:
+  - id: component_id
+    title: Component Name
+    description: What this component does
+    technology: Main technology used
+    tier: client          # client | service | engine | data
+    color: indigo         # indigo | amber | green | blue
+    subcomponents:
+      - name: Sub Name
+        detail: Short description of this subcomponent
+
+connections:
+  - from: component_id
+    to: other_component_id
+    label: What flows between them
+    protocol: HTTP        # WebRTC | HTTP | gRPC | WebSocket | MCP | In-process | etc.
+    style: sync           # sync | async | stream

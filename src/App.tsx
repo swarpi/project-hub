@@ -4,7 +4,9 @@ import WorkflowsSection from '@/components/sections/WorkflowsSection';
 import PipelineSection from '@/components/sections/PipelineSection';
 import ProjectsSection from '@/components/sections/ProjectsSection';
 import GraphModal from '@/components/ui/GraphModal';
+import BuilderPage from '@/builder/BuilderPage';
 import { useProjectData } from '@/lib/data-loader';
+import { useHashRoute } from '@/lib/use-hash-route';
 import type { Orchestration, Architecture, ProjectWithOrchestration } from '@/lib/types';
 
 interface ActiveGraph {
@@ -15,6 +17,7 @@ interface ActiveGraph {
 }
 
 export default function App() {
+  const route = useHashRoute();
   const { data, isLoading, isRefreshing, error, refresh } = useProjectData();
   const [activeGraph, setActiveGraph] = useState<ActiveGraph | null>(null);
 
@@ -28,9 +31,18 @@ export default function App() {
     });
   };
 
+  if (route === '/builder') {
+    return (
+      <>
+        <NavBar activeRoute={route} hideSections={data?.pipeline ? [] : ['pipeline']} />
+        <BuilderPage />
+      </>
+    );
+  }
+
   return (
     <>
-      <NavBar hideSections={data?.pipeline ? [] : ['pipeline']} />
+      <NavBar activeRoute={route} hideSections={data?.pipeline ? [] : ['pipeline']} />
 
       <main style={{ flex: 1 }}>
         {isLoading ? (

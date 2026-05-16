@@ -618,7 +618,6 @@ export default function ArchitectureGraph({ architecture, projectName, projectUr
         @keyframes archFadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes archNodeIn { from { opacity: 0; transform: scale(0.92) translateY(6px); } to { opacity: 1; transform: scale(1) translateY(0); } }
         @keyframes archPanelIn { from { opacity: 0; transform: translate(-50%, -50%) scale(0.95); } to { opacity: 1; transform: translate(-50%, -50%) scale(1); } }
-        @keyframes archFlowDash { from { stroke-dashoffset: 60; } to { stroke-dashoffset: 0; } }
         .arch-flow-line { animation: archFlowDash 1.6s linear infinite; }
       `}</style>
 

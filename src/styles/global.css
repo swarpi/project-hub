@@ -16,3 +16,8 @@ body {
 ::selection {
   background: var(--hub-accent-light);
 }
+
+@keyframes archFlowDash {
+  from { stroke-dashoffset: 60; }
+  to { stroke-dashoffset: 0; }
+}
