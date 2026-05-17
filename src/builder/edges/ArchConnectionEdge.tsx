@@ -152,7 +152,7 @@ function EdgeTooltipContent({
 }
 
 export function ArchConnectionEdge({
-	id,
+	id: _id,
 	source,
 	target,
 	sourceX,

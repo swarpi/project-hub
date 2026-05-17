@@ -30,6 +30,7 @@ export interface Subcomponent {
 }
 
 export interface ArchComponent {
+  [key: string]: unknown;
   id: string;
   title: string;
   description: string;

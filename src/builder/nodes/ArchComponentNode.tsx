@@ -207,7 +207,7 @@ export function ArchComponentNode({
 			<Tooltip content={<NodeTooltipContent data={data} />} maxWidth={340}>
 				{({ onMouseEnter, onMouseLeave, ref }) => (
 					<div
-						ref={ref}
+						ref={ref as React.Ref<HTMLDivElement>}
 						onMouseEnter={onMouseEnter}
 						onMouseLeave={onMouseLeave}
 						style={{
@@ -337,7 +337,7 @@ export function ArchComponentNode({
 									>
 										{({ onMouseEnter, onMouseLeave, ref: subRef }) => (
 											<span
-												ref={subRef}
+												ref={subRef as React.Ref<HTMLSpanElement>}
 												onMouseEnter={onMouseEnter}
 												onMouseLeave={onMouseLeave}
 												style={{
@@ -381,7 +381,7 @@ export function ArchComponentNode({
 									>
 										{({ onMouseEnter, onMouseLeave, ref: moreRef }) => (
 											<span
-												ref={moreRef}
+												ref={moreRef as React.Ref<HTMLSpanElement>}
 												onMouseEnter={onMouseEnter}
 												onMouseLeave={onMouseLeave}
 												style={{
@@ -395,7 +395,7 @@ export function ArchComponentNode({
 													cursor: "default",
 												}}
 											>
-												+{data.subcomponents.length - 2}
+												+{data.subcomponents!.length - 2}
 											</span>
 										)}
 									</Tooltip>

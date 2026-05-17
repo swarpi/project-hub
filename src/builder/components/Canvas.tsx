@@ -6,6 +6,7 @@ import {
 	Controls,
 	MiniMap,
 	MarkerType,
+	ConnectionMode,
 	applyNodeChanges,
 	applyEdgeChanges,
 	useReactFlow,
@@ -352,7 +353,7 @@ export function Canvas(): React.ReactElement {
 				onPaneClick={onPaneClick}
 				onConnect={onConnect}
 				isValidConnection={isValidConnection}
-				connectionMode="loose"
+				connectionMode={ConnectionMode.Loose}
 				connectionRadius={40}
 				connectionLineStyle={{ stroke: "var(--wf-text-dim)", strokeWidth: 1.5 }}
 				snapToGrid={snapToGrid}

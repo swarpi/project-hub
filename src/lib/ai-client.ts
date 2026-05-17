@@ -26,7 +26,6 @@ interface ApiError {
 }
 
 const DEFAULT_BASE_URL = "https://api.anthropic.com";
-const LOCAL_PROXY_URL = "http://localhost:3456";
 const DEFAULT_MODEL = "claude-sonnet-4-6";
 const DEFAULT_MAX_TOKENS = 1024;
 
