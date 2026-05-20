@@ -16,7 +16,14 @@ _Tickets ready to be picked up in the next cycle._
 
 | Ticket | Feature | Priority | Estimate |
 |--------|---------|----------|----------|
-| | | | |
+| [001 — Zone layout module refactor](flexible-zones/001-zone-layout-module-refactor.md) | flexible-zones | P0 | S |
+| [002 — Store: zones slice and migration](flexible-zones/002-store-zones-slice.md) | flexible-zones | P0 | M |
+| [003 — TierZoneNode: interactive zone node with resize](flexible-zones/003-tier-zone-node-interactive.md) | flexible-zones | P1 | S |
+| [004 — Canvas: zone-driven rendering and interaction](flexible-zones/004-canvas-zone-driven-rendering.md) | flexible-zones | P1 | M |
+| [005 — Palette: dynamic zone list and Add Zone](flexible-zones/005-palette-dynamic-zones.md) | flexible-zones | P1 | S |
+| [006 — PropertiesPanel: zone section and dynamic zone dropdown](flexible-zones/006-properties-panel-zone-section.md) | flexible-zones | P1 | M |
+| [007 — Auto-layout and YAML export zone-aware updates](flexible-zones/007-layout-and-yaml-export-update.md) | flexible-zones | P1 | S |
+| [008 — Tier icons: LayerIcon fallback for custom zones](flexible-zones/008-tier-icons-layer-icon.md) | flexible-zones | P2 | XS |
 
 ## Backlog
 
@@ -32,6 +39,11 @@ _Completed tickets. Move here when done, newest first._
 
 | Ticket | Feature | Completed |
 |--------|---------|-----------|
+| [005 — MiniMap and visual polish](tier-zones/005-minimap-and-polish.md) | tier-zones | 2026-05-17 |
+| [004 — Layout and store updates](tier-zones/004-layout-and-store-updates.md) | tier-zones | 2026-05-17 |
+| [003 — Canvas zone integration](tier-zones/003-canvas-zone-integration.md) | tier-zones | 2026-05-17 |
+| [002 — TierZoneNode component](tier-zones/002-tier-zone-node-component.md) | tier-zones | 2026-05-17 |
+| [001 — Zone constants module](tier-zones/001-zone-constants-module.md) | tier-zones | 2026-05-17 |
 | [005 — Properties panel accessible fallback](builder-tooltips/005-properties-panel-accessible-fallback.md) | builder-tooltips | 2026-05-16 |
 | [004 — Verify graceful degradation for unknown protocols](builder-tooltips/004-unknown-protocol-graceful-degradation.md) | builder-tooltips | 2026-05-16 |
 | [003 — Verify and fix edge tooltip rendering](builder-tooltips/003-verify-edge-tooltips.md) | builder-tooltips | 2026-05-16 |

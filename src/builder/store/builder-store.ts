@@ -3,15 +3,18 @@ import { persist } from "zustand/middleware";
 import { shallow } from "zustand/shallow";
 import { temporal } from "zundo";
 import type { TemporalState } from "zundo";
-import type { ArchComponent, ArchConnection } from "@/lib/types";
+import type { ArchComponent, ArchConnection, Zone } from "@/lib/types";
 import type { DiagramModel } from "../lib/yaml-export";
+import { ZONE_PADDING, DEFAULT_ZONES } from "../lib/zone-layout";
 
 interface DiagramSlice {
 	name: string;
 	description: string;
+	zones: Zone[];
 	components: ArchComponent[];
 	connections: ArchConnection[];
 	positions: Record<string, { x: number; y: number }>;
+	layoutVersion: number;
 }
 
 interface UiSlice {
@@ -26,6 +29,13 @@ interface SettingsSlice {
 	aiBaseUrl: string;
 	snapToGrid: boolean;
 	gridSize: number;
+}
+
+interface ZoneActions {
+	addZone: (zone: Zone) => void;
+	updateZone: (id: string, patch: Partial<Omit<Zone, "id">>) => void;
+	removeZone: (id: string) => void;
+	reorderZones: (orderedIds: string[]) => void;
 }
 
 interface DiagramActions {
@@ -52,6 +62,7 @@ interface DiagramActions {
 	loadDiagram: (
 		diagram: DiagramModel & {
 			positions: Record<string, { x: number; y: number }>;
+			zones?: Zone[];
 		},
 	) => void;
 }
@@ -72,6 +83,7 @@ interface SettingsActions {
 type BuilderState = DiagramSlice &
 	UiSlice &
 	SettingsSlice &
+	ZoneActions &
 	DiagramActions &
 	UiActions &
 	SettingsActions;
@@ -80,9 +92,11 @@ export function createInitialDiagram(): DiagramSlice {
 	return {
 		name: "Untitled Architecture",
 		description: "",
+		zones: DEFAULT_ZONES,
 		components: [],
 		connections: [],
 		positions: {},
+		layoutVersion: 3,
 	};
 }
 
@@ -90,9 +104,11 @@ function partializeDiagram(state: BuilderState): DiagramSlice {
 	return {
 		name: state.name,
 		description: state.description,
+		zones: state.zones,
 		components: state.components,
 		connections: state.connections,
 		positions: state.positions,
+		layoutVersion: state.layoutVersion,
 	};
 }
 
@@ -130,6 +146,38 @@ export const useBuilderStore = create<BuilderState>()(
 			(set) => ({
 				...createInitialDiagram(),
 
+				addZone: (zone) =>
+					set((state) => ({ zones: [...state.zones, zone] })),
+
+				updateZone: (id, patch) =>
+					set((state) => ({
+						zones: state.zones.map((z) =>
+							z.id === id ? { ...z, ...patch } : z,
+						),
+					})),
+
+				removeZone: (id) =>
+					set((state) => ({
+						zones: state.zones.filter((z) => z.id !== id),
+					})),
+
+				reorderZones: (orderedIds) =>
+					set((state) => {
+						const byId = new Map(state.zones.map((z) => [z.id, z]));
+						const ordered: Zone[] = [];
+						for (const zid of orderedIds) {
+							const z = byId.get(zid);
+							if (z) {
+								ordered.push(z);
+								byId.delete(zid);
+							}
+						}
+						for (const z of byId.values()) {
+							ordered.push(z);
+						}
+						return { zones: ordered };
+					}),
+
 				selectedNodeId: null,
 				selectedEdgeId: null,
 				activePanel: "properties" as const,
@@ -155,11 +203,21 @@ export const useBuilderStore = create<BuilderState>()(
 					})),
 
 				updateComponent: (id, patch) =>
-					set((state) => ({
-						components: state.components.map((c) =>
-							c.id === id ? { ...c, ...patch } : c,
-						),
-					})),
+					set((state) => {
+						const current = state.components.find((c) => c.id === id);
+						const tierChanged = patch.tier && current && patch.tier !== current.tier;
+						return {
+							components: state.components.map((c) =>
+								c.id === id ? { ...c, ...patch } : c,
+							),
+							...(tierChanged && {
+								positions: {
+									...state.positions,
+									[id]: { x: ZONE_PADDING.left, y: ZONE_PADDING.top },
+								},
+							}),
+						};
+					}),
 
 				removeComponent: (id) =>
 					set((state) => {
@@ -220,9 +278,11 @@ export const useBuilderStore = create<BuilderState>()(
 					set({
 						name: diagram.name,
 						description: diagram.description,
+						zones: diagram.zones ?? DEFAULT_ZONES,
 						components: diagram.components,
 						connections: diagram.connections,
 						positions: diagram.positions,
+						layoutVersion: 3,
 						selectedNodeId: null,
 						selectedEdgeId: null,
 					}),
@@ -253,6 +313,27 @@ export const useBuilderStore = create<BuilderState>()(
 		{
 			name: "diagram-builder-diagram",
 			partialize: partializeDiagram,
+			onRehydrateStorage: () => (state) => {
+				if (!state) return;
+				if (!state.layoutVersion || state.layoutVersion < 2) {
+					state.positions = {};
+					state.layoutVersion = 2;
+				}
+				if (!state.zones || state.layoutVersion < 3) {
+					state.zones = DEFAULT_ZONES;
+					const OLD_TIER_MAP: Record<string, string> = {
+						client: "zone-client",
+						service: "zone-service",
+						engine: "zone-engine",
+						data: "zone-data",
+					};
+					for (const comp of state.components) {
+						const mapped = OLD_TIER_MAP[comp.tier];
+						if (mapped) comp.tier = mapped;
+					}
+					state.layoutVersion = 3;
+				}
+			},
 		},
 	),
 );

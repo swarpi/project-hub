@@ -47,13 +47,14 @@ function highlightYaml(yaml: string): React.ReactElement[] {
 export function YamlPreview(): React.ReactElement {
 	const name = useBuilderStore((s) => s.name);
 	const description = useBuilderStore((s) => s.description);
+	const zones = useBuilderStore((s) => s.zones);
 	const components = useBuilderStore((s) => s.components);
 	const connections = useBuilderStore((s) => s.connections);
 	const [copied, setCopied] = useState(false);
 
 	const yamlStr = useMemo(
-		() => diagramToYaml({ name, description, components, connections }),
-		[name, description, components, connections],
+		() => diagramToYaml({ name, description, zones, components, connections }),
+		[name, description, zones, components, connections],
 	);
 
 	const highlighted = useMemo(() => highlightYaml(yamlStr), [yamlStr]);

@@ -7,7 +7,7 @@ export type ColorEntry = {
 	border: string;
 };
 
-export type ColorKey = "indigo" | "amber" | "green" | "blue";
+export type ColorKey = "indigo" | "amber" | "green" | "blue" | "rose" | "teal" | "purple" | "slate";
 
 export const COLORS: Record<ColorKey, ColorEntry> = {
 	indigo: {
@@ -34,6 +34,30 @@ export const COLORS: Record<ColorKey, ColorEntry> = {
 		dim: "oklch(0.55 0.15 240 / 0.12)",
 		border: "oklch(0.55 0.15 240 / 0.2)",
 	},
+	rose: {
+		main: "oklch(0.55 0.18 15)",
+		light: "oklch(0.94 0.04 15)",
+		dim: "oklch(0.55 0.18 15 / 0.12)",
+		border: "oklch(0.55 0.18 15 / 0.2)",
+	},
+	teal: {
+		main: "oklch(0.55 0.12 185)",
+		light: "oklch(0.94 0.04 185)",
+		dim: "oklch(0.55 0.12 185 / 0.12)",
+		border: "oklch(0.55 0.12 185 / 0.2)",
+	},
+	purple: {
+		main: "oklch(0.50 0.18 300)",
+		light: "oklch(0.94 0.04 300)",
+		dim: "oklch(0.50 0.18 300 / 0.12)",
+		border: "oklch(0.50 0.18 300 / 0.2)",
+	},
+	slate: {
+		main: "oklch(0.50 0.02 260)",
+		light: "oklch(0.94 0.01 260)",
+		dim: "oklch(0.50 0.02 260 / 0.12)",
+		border: "oklch(0.50 0.02 260 / 0.2)",
+	},
 };
 
 export const TIER_LABELS: Record<string, string> = {
@@ -58,7 +82,7 @@ export function getTierAccentElements(
 	};
 
 	switch (tier) {
-		case "service":
+		case "zone-service":
 			return [
 				{
 					...base,
@@ -69,7 +93,7 @@ export function getTierAccentElements(
 					borderRadius: "12px 0 0 12px",
 				},
 			];
-		case "engine":
+		case "zone-engine":
 			return [
 				{
 					...base,
@@ -80,7 +104,7 @@ export function getTierAccentElements(
 					borderRadius: "0 0 12px 12px",
 				},
 			];
-		case "data":
+		case "zone-data":
 			return [
 				{
 					...base,
@@ -99,7 +123,7 @@ export function getTierAccentElements(
 					borderRadius: "0 0 12px 12px",
 				},
 			];
-		case "client":
+		case "zone-client":
 		default:
 			return [
 				{
@@ -116,25 +140,25 @@ export function getTierAccentElements(
 
 export function getTierBadgeStyle(tier: string, color: ColorEntry): CSSProperties {
 	switch (tier) {
-		case "client":
+		case "zone-client":
 			return {
 				background: color.dim,
 				color: color.main,
 				border: `1px solid ${color.border}`,
 			};
-		case "service":
+		case "zone-service":
 			return {
 				background: "transparent",
 				color: color.main,
 				border: `1.5px solid ${color.main}`,
 			};
-		case "engine":
+		case "zone-engine":
 			return {
 				background: color.light,
 				color: color.main,
 				border: `1px dashed ${color.border}`,
 			};
-		case "data":
+		case "zone-data":
 			return {
 				background: color.dim,
 				color: color.main,

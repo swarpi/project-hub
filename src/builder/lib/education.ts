@@ -1,20 +1,20 @@
 export const TIER_EXPLANATIONS: Record<string, { summary: string; when: string; examples: string }> = {
-  client: {
+  "zone-client": {
     summary: "The presentation layer — user-facing interfaces that people interact with directly.",
     when: "Use for frontends, mobile apps, CLI tools, browser extensions, or any component a user sees and touches.",
     examples: "React SPA, iOS app, Electron desktop app, CLI tool",
   },
-  service: {
+  "zone-service": {
     summary: "The application layer — APIs and backend services that process requests and enforce business rules.",
     when: "Use for REST APIs, GraphQL servers, microservices, API gateways, or auth services.",
     examples: "Express API, Spring Boot service, API Gateway, Auth server",
   },
-  engine: {
+  "zone-engine": {
     summary: "The processing layer — background workers and computation engines that handle heavy lifting.",
     when: "Use for async job processors, ML pipelines, ETL workflows, search indexers, or notification dispatchers.",
     examples: "Celery worker, Spark job, ML inference server, cron scheduler",
   },
-  data: {
+  "zone-data": {
     summary: "The persistence layer — databases, caches, queues, and storage that hold system state.",
     when: "Use for relational DBs, document stores, caches, message brokers, blob storage, or search indices.",
     examples: "PostgreSQL, Redis, S3, Kafka, Elasticsearch",

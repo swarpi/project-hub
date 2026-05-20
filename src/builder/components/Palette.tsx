@@ -1,41 +1,14 @@
 import { useCallback } from "react";
 import { useReactFlow } from "@xyflow/react";
-import type { ArchComponent } from "@/lib/types";
+import type { ArchComponent, Zone } from "@/lib/types";
 import { useBuilderStore } from "../store/builder-store";
-import { COLORS, TIER_LABELS, getTierAccentElements } from "../lib/node-styles";
-import type { ColorKey } from "../lib/node-styles";
+import { COLORS, getTierAccentElements } from "../lib/node-styles";
 import { TierIcon } from "../lib/tier-icons";
-
-const TIER_TEMPLATES: {
-	tier: ArchComponent["tier"];
-	color: ColorKey;
-}[] = [
-	{ tier: "client", color: "indigo" },
-	{ tier: "service", color: "amber" },
-	{ tier: "engine", color: "green" },
-	{ tier: "data", color: "blue" },
-];
-
-function createComponentData(
-	tier: ArchComponent["tier"],
-): ArchComponent {
-	const tierColorMap = {
-		client: "indigo",
-		service: "amber",
-		engine: "green",
-		data: "blue",
-	} as const;
-	return {
-		id: `comp_${Date.now()}`,
-		title: `New ${TIER_LABELS[tier]} Component`,
-		description: "",
-		technology: "",
-		tier,
-		color: tierColorMap[tier],
-	};
-}
+import { createDefaultZone } from "../lib/zone-layout";
 
 export function Palette(): React.ReactElement {
+	const zones = useBuilderStore((s) => s.zones);
+	const addZone = useBuilderStore((s) => s.addZone);
 	const addComponentAtPosition = useBuilderStore(
 		(s) => s.addComponentAtPosition,
 	);
@@ -43,28 +16,41 @@ export function Palette(): React.ReactElement {
 	const reactFlow = useReactFlow();
 
 	const onDragStart = useCallback(
-		(e: React.DragEvent, tier: ArchComponent["tier"]) => {
-			e.dataTransfer.setData("application/reactflow-tier", tier);
+		(e: React.DragEvent, zoneId: string) => {
+			e.dataTransfer.setData("application/reactflow-tier", zoneId);
 			e.dataTransfer.effectAllowed = "move";
 		},
 		[],
 	);
 
 	const onDoubleClick = useCallback(
-		(tier: ArchComponent["tier"]) => {
+		(zone: Zone) => {
 			const { x, y, zoom } = reactFlow.getViewport();
 			const centerX = (-x + window.innerWidth / 2) / zoom;
 			const centerY = (-y + window.innerHeight / 2) / zoom;
 			const offset = () => Math.random() * 80 - 40;
-			const comp = createComponentData(tier);
+			const id = `comp_${Date.now()}`;
+			const comp: ArchComponent = {
+				id,
+				title: `New ${zone.name} Component`,
+				description: "",
+				technology: "",
+				tier: zone.id,
+				color: zone.color,
+			};
 			addComponentAtPosition(comp, {
 				x: centerX + offset(),
 				y: centerY + offset(),
 			});
-			selectNode(comp.id);
+			selectNode(id);
 		},
 		[reactFlow, addComponentAtPosition, selectNode],
 	);
+
+	const onAddZone = useCallback(() => {
+		const zone = createDefaultZone(zones);
+		addZone(zone);
+	}, [zones, addZone]);
 
 	return (
 		<div
@@ -94,14 +80,14 @@ export function Palette(): React.ReactElement {
 				Components
 			</div>
 
-			{TIER_TEMPLATES.map(({ tier, color }) => {
-				const c = COLORS[color];
+			{zones.map((zone) => {
+				const c = COLORS[zone.color];
 				return (
 					<div
-						key={tier}
+						key={zone.id}
 						draggable
-						onDragStart={(e) => onDragStart(e, tier)}
-						onDoubleClick={() => onDoubleClick(tier)}
+						onDragStart={(e) => onDragStart(e, zone.id)}
+						onDoubleClick={() => onDoubleClick(zone)}
 						style={{
 							position: "relative",
 							overflow: "hidden",
@@ -122,7 +108,7 @@ export function Palette(): React.ReactElement {
 							e.currentTarget.style.boxShadow = "none";
 						}}
 					>
-						{getTierAccentElements(tier, c.main, true).map(
+						{getTierAccentElements(zone.id, c.main, true).map(
 							(style, i) => (
 								<div key={i} style={style} />
 							),
@@ -146,7 +132,7 @@ export function Palette(): React.ReactElement {
 									justifyContent: "center",
 								}}
 							>
-								<TierIcon tier={tier} size={22} color={c.main} />
+								<TierIcon tier={zone.id} size={22} color={c.main} />
 							</div>
 							<div>
 								<span
@@ -158,7 +144,7 @@ export function Palette(): React.ReactElement {
 										display: "block",
 									}}
 								>
-									{TIER_LABELS[tier]}
+									{zone.name}
 								</span>
 								<span
 									style={{
@@ -174,6 +160,41 @@ export function Palette(): React.ReactElement {
 					</div>
 				);
 			})}
+
+			<button
+				type="button"
+				onClick={onAddZone}
+				style={{
+					display: "flex",
+					alignItems: "center",
+					justifyContent: "center",
+					gap: 6,
+					padding: "8px 12px",
+					background: "transparent",
+					border: "1px dashed var(--wf-border)",
+					borderRadius: 10,
+					cursor: "pointer",
+					fontFamily: "'Space Grotesk', sans-serif",
+					fontSize: "11px",
+					fontWeight: 600,
+					color: "var(--wf-text-dim)",
+					transition: "all 0.15s ease",
+				}}
+				onMouseEnter={(e) => {
+					e.currentTarget.style.borderColor = "var(--wf-text-sec)";
+					e.currentTarget.style.color = "var(--wf-text-sec)";
+				}}
+				onMouseLeave={(e) => {
+					e.currentTarget.style.borderColor = "var(--wf-border)";
+					e.currentTarget.style.color = "var(--wf-text-dim)";
+				}}
+			>
+				<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+					<line x1="12" y1="5" x2="12" y2="19" />
+					<line x1="5" y1="12" x2="19" y2="12" />
+				</svg>
+				Add Zone
+			</button>
 		</div>
 	);
 }

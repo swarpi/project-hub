@@ -171,10 +171,10 @@ const TIER_ICONS: Record<
 	string,
 	React.ComponentType<TierIconProps>
 > = {
-	client: ClientIcon,
-	service: ServiceIcon,
-	engine: EngineIcon,
-	data: DataIcon,
+	"zone-client": ClientIcon,
+	"zone-service": ServiceIcon,
+	"zone-engine": EngineIcon,
+	"zone-data": DataIcon,
 };
 
 export function TierIcon({

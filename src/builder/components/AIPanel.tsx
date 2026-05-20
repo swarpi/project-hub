@@ -25,13 +25,17 @@ When the user asks you to generate or create a diagram/architecture, you MUST re
 \`\`\`
 name: <diagram name>
 description: <brief description>
+zones:
+  - id: <zone-kebab-id>
+    name: <display name>
+    color: <indigo|amber|green|blue|rose|teal|purple|slate>
 components:
   - id: <kebab-case-id>
     title: <display name>
     description: <what this component does>
     technology: <e.g. React, Node.js, PostgreSQL>
-    tier: <client|service|engine|data>
-    color: <indigo|amber|green|blue>
+    tier: <zone-id from zones list>
+    color: <indigo|amber|green|blue|rose|teal|purple|slate>
 connections:
   - from: <component-id>
     to: <component-id>
@@ -40,8 +44,13 @@ connections:
     style: <sync|async|stream>
 \`\`\`
 
-Tier meanings: client = frontend/user-facing, service = backend APIs/services, engine = processing/business logic, data = databases/storage/caches.
-Color defaults: client→indigo, service→amber, engine→green, data→blue.
+Zones are customizable groupings that organize components on the canvas. Each component's \`tier\` field must reference a zone \`id\`. The four default zones are:
+- zone-client (indigo) — frontend/user-facing interfaces
+- zone-service (amber) — backend APIs and services
+- zone-engine (green) — processing and business logic
+- zone-data (blue) — databases, storage, and caches
+
+You can define additional custom zones (e.g. zone-infrastructure, zone-external, zone-monitoring) with any of the 8 available colors. Always use the \`zone-\` prefix for zone IDs.
 
 Always include a brief explanation before or after the YAML block. Use realistic component ids (kebab-case), meaningful descriptions, and appropriate technologies.
 
@@ -72,6 +81,7 @@ export function AIPanel(): React.ReactElement {
 	const components = useBuilderStore((s) => s.components);
 	const connections = useBuilderStore((s) => s.connections);
 	const loadDiagram = useBuilderStore((s) => s.loadDiagram);
+	const zones = useBuilderStore((s) => s.zones);
 
 	const [messages, setMessages] = useState<ChatMessage[]>([]);
 	const [input, setInput] = useState("");
@@ -92,7 +102,7 @@ export function AIPanel(): React.ReactElement {
 			setLoading(true);
 
 			try {
-				const yaml = diagramToYaml({ name, description, components, connections });
+				const yaml = diagramToYaml({ name, description, zones, components, connections });
 				const apiMessages = [...messages, userMsg]
 					.filter((m) => m.role !== "error")
 					.map((m) => ({
@@ -125,7 +135,7 @@ export function AIPanel(): React.ReactElement {
 				setLoading(false);
 			}
 		},
-		[apiKey, aiBaseUrl, messages, name, description, components, connections],
+		[apiKey, aiBaseUrl, messages, name, description, zones, components, connections],
 	);
 
 	const applyYaml = useCallback(
@@ -138,11 +148,11 @@ export function AIPanel(): React.ReactElement {
 				]);
 				return;
 			}
-			const positions = computeTierLayout(diagram.components);
-			loadDiagram({ ...diagram, positions });
+			const layoutResult = computeTierLayout(diagram.components, zones);
+			loadDiagram({ ...diagram, positions: layoutResult.components });
 			setAppliedBlocks((prev) => new Set(prev).add(yamlStr));
 		},
-		[loadDiagram],
+		[loadDiagram, zones],
 	);
 
 	const onReview = useCallback(() => {

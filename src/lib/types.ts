@@ -29,14 +29,24 @@ export interface Subcomponent {
   detail: string;
 }
 
+export interface Zone {
+  id: string;
+  name: string;
+  color: 'indigo' | 'amber' | 'green' | 'blue' | 'rose' | 'teal' | 'purple' | 'slate';
+  position: { x: number; y: number };
+  width: number;
+  height: number;
+}
+
 export interface ArchComponent {
   [key: string]: unknown;
   id: string;
   title: string;
   description: string;
   technology: string;
-  tier: 'client' | 'service' | 'engine' | 'data';
-  color: 'indigo' | 'amber' | 'green' | 'blue';
+  /** Zone ID this component belongs to. Legacy name retained for migration compatibility. */
+  tier: string;
+  color: 'indigo' | 'amber' | 'green' | 'blue' | 'rose' | 'teal' | 'purple' | 'slate';
   subcomponents?: Subcomponent[];
 }
 

@@ -1,16 +1,10 @@
 import { useState, useCallback, type CSSProperties } from "react";
 import { useBuilderStore } from "../store/builder-store";
-import { COLORS, TIER_LABELS } from "../lib/node-styles";
+import { COLORS } from "../lib/node-styles";
 import type { ColorKey } from "../lib/node-styles";
-import type { ArchComponent, ArchConnection } from "@/lib/types";
+import type { ArchComponent, ArchConnection, Zone } from "@/lib/types";
 import { sendMessage, AIClientError } from "@/lib/ai-client";
-
-const TIER_COLOR: Record<ArchComponent["tier"], ColorKey> = {
-	client: "indigo",
-	service: "amber",
-	engine: "green",
-	data: "blue",
-};
+import { MIN_ZONE_WIDTH, MIN_ZONE_HEIGHT } from "../lib/zone-layout";
 
 const PANEL: CSSProperties = {
 	flex: 1,
@@ -89,7 +83,7 @@ const INLINE_ERROR: CSSProperties = {
 	marginTop: 2,
 };
 
-const COLOR_KEYS: ColorKey[] = ["indigo", "amber", "green", "blue"];
+const COLOR_KEYS: ColorKey[] = ["indigo", "amber", "green", "blue", "rose", "teal", "purple", "slate"];
 const STYLE_OPTIONS: NonNullable<ArchConnection["style"]>[] = [
 	"sync",
 	"async",
@@ -231,6 +225,7 @@ function Spinner() {
 }
 
 function NodeSection({ component }: { component: ArchComponent }) {
+	const zones = useBuilderStore((s) => s.zones);
 	const updateComponent = useBuilderStore((s) => s.updateComponent);
 	const apiKey = useBuilderStore((s) => s.apiKey);
 	const aiBaseUrl = useBuilderStore((s) => s.aiBaseUrl);
@@ -254,13 +249,14 @@ function NodeSection({ component }: { component: ArchComponent }) {
 
 	const onTierChange = useCallback(
 		(e: React.ChangeEvent<HTMLSelectElement>) => {
-			const tier = e.target.value as ArchComponent["tier"];
+			const zoneId = e.target.value;
+			const zone = zones.find((z) => z.id === zoneId);
 			updateComponent(component.id, {
-				tier,
-				color: TIER_COLOR[tier],
+				tier: zoneId,
+				...(zone ? { color: zone.color } : {}),
 			});
 		},
-		[component.id, updateComponent],
+		[component.id, updateComponent, zones],
 	);
 
 	const generateDescription = useCallback(async () => {
@@ -277,7 +273,8 @@ function NodeSection({ component }: { component: ArchComponent }) {
 			const connectionSummary =
 				related.length > 0 ? related.join(", ") : "no direct connections";
 
-			const prompt = `Write a concise 1-2 sentence description for a software component named '${component.title}' (${component.technology || "unspecified technology"}, ${component.tier} tier). It connects to: ${connectionSummary}. Describe what it does and its role in the system.`;
+			const zoneName = zones.find((z) => z.id === component.tier)?.name ?? component.tier;
+			const prompt = `Write a concise 1-2 sentence description for a software component named '${component.title}' (${component.technology || "unspecified technology"}, ${zoneName} tier). It connects to: ${connectionSummary}. Describe what it does and its role in the system.`;
 
 			const response = await sendMessage({
 				apiKey: apiKey || "local-proxy",
@@ -293,13 +290,14 @@ function NodeSection({ component }: { component: ArchComponent }) {
 		} finally {
 			setDescLoading(false);
 		}
-	}, [component, apiKey, aiBaseUrl, connections, components, updateComponent]);
+	}, [component, apiKey, aiBaseUrl, connections, components, zones, updateComponent]);
 
 	const suggestTechnology = useCallback(async () => {
 		setTechLoading(true);
 		setTechError(null);
 		try {
-			const prompt = `Suggest a specific technology or framework for a ${component.tier}-tier component named '${component.title}' in a software architecture. Reply with just the technology name, nothing else.`;
+			const zoneName = zones.find((z) => z.id === component.tier)?.name ?? component.tier;
+			const prompt = `Suggest a specific technology or framework for a ${zoneName}-tier component named '${component.title}' in a software architecture. Reply with just the technology name, nothing else.`;
 
 			const response = await sendMessage({
 				apiKey: apiKey || "local-proxy",
@@ -315,7 +313,7 @@ function NodeSection({ component }: { component: ArchComponent }) {
 		} finally {
 			setTechLoading(false);
 		}
-	}, [component, apiKey, aiBaseUrl, updateComponent]);
+	}, [component, apiKey, aiBaseUrl, zones, updateComponent]);
 
 	return (
 		<>
@@ -426,17 +424,20 @@ function NodeSection({ component }: { component: ArchComponent }) {
 			</div>
 
 			<div style={FIELD}>
-				<label style={LABEL}>Tier</label>
+				<label style={LABEL}>Zone</label>
 				<select
 					style={SELECT}
 					value={component.tier}
 					onChange={onTierChange}
 				>
-					{Object.entries(TIER_LABELS).map(([value, label]) => (
-						<option key={value} value={value}>
-							{label}
+					{zones.map((z) => (
+						<option key={z.id} value={z.id}>
+							{z.name}
 						</option>
 					))}
+					{!zones.some((z) => z.id === component.tier) && (
+						<option value={component.tier}>(Unassigned)</option>
+					)}
 				</select>
 			</div>
 
@@ -596,9 +597,132 @@ function EdgeSection({ connection }: { connection: ArchConnection }) {
 	);
 }
 
+function ZoneSection({ zone }: { zone: Zone }) {
+	const components = useBuilderStore((s) => s.components);
+	const updateZone = useBuilderStore((s) => s.updateZone);
+	const removeZone = useBuilderStore((s) => s.removeZone);
+	const clearSelection = useBuilderStore((s) => s.clearSelection);
+
+	const compCount = components.filter((c) => c.tier === zone.id).length;
+
+	return (
+		<>
+			<h3 style={HEADING}>Zone</h3>
+
+			<div style={FIELD}>
+				<label style={LABEL}>Name</label>
+				<input
+					style={INPUT}
+					value={zone.name}
+					onChange={(e) => updateZone(zone.id, { name: e.target.value })}
+				/>
+			</div>
+
+			<div style={FIELD}>
+				<label style={LABEL}>Color</label>
+				<div style={{ display: "flex", gap: 8, paddingTop: 2 }}>
+					{COLOR_KEYS.map((key) => (
+						<button
+							key={key}
+							type="button"
+							onClick={() => updateZone(zone.id, { color: key })}
+							style={{
+								width: 20,
+								height: 20,
+								borderRadius: "50%",
+								background: COLORS[key].main,
+								border: "none",
+								cursor: "pointer",
+								padding: 0,
+								boxShadow:
+									zone.color === key
+										? `0 0 0 2px var(--wf-bg), 0 0 0 4px ${COLORS[key].main}`
+										: "none",
+								transition: "box-shadow 0.15s ease",
+							}}
+							title={key}
+						/>
+					))}
+				</div>
+			</div>
+
+			<div style={{ display: "flex", gap: 8 }}>
+				<div style={{ ...FIELD, flex: 1 }}>
+					<label style={LABEL}>Width</label>
+					<input
+						style={INPUT}
+						type="number"
+						min={MIN_ZONE_WIDTH}
+						value={zone.width}
+						onChange={(e) =>
+							updateZone(zone.id, {
+								width: Math.max(MIN_ZONE_WIDTH, Number(e.target.value)),
+							})
+						}
+					/>
+				</div>
+				<div style={{ ...FIELD, flex: 1 }}>
+					<label style={LABEL}>Height</label>
+					<input
+						style={INPUT}
+						type="number"
+						min={MIN_ZONE_HEIGHT}
+						value={zone.height}
+						onChange={(e) =>
+							updateZone(zone.id, {
+								height: Math.max(MIN_ZONE_HEIGHT, Number(e.target.value)),
+							})
+						}
+					/>
+				</div>
+			</div>
+
+			<div
+				style={{
+					fontFamily: "'Space Grotesk', sans-serif",
+					fontSize: 11,
+					color: "var(--wf-text-sec)",
+				}}
+			>
+				{compCount} component{compCount !== 1 ? "s" : ""} in this zone
+			</div>
+
+			<button
+				type="button"
+				onClick={() => {
+					removeZone(zone.id);
+					clearSelection();
+				}}
+				style={{
+					width: "100%",
+					padding: "8px 12px",
+					borderRadius: 6,
+					border: "1px solid oklch(0.7 0.12 15)",
+					background: "oklch(0.95 0.03 15)",
+					color: "oklch(0.45 0.18 15)",
+					fontFamily: "'Space Grotesk', sans-serif",
+					fontSize: 12,
+					fontWeight: 600,
+					cursor: "pointer",
+					transition: "all 0.15s ease",
+				}}
+			>
+				Delete Zone{compCount > 0 ? ` (${compCount} orphaned)` : ""}
+			</button>
+		</>
+	);
+}
+
 export function PropertiesPanel() {
+	const zones = useBuilderStore((s) => s.zones);
+	const selectedNodeId = useBuilderStore((s) => s.selectedNodeId);
+
+	const zone = selectedNodeId
+		? (zones.find((z) => z.id === selectedNodeId) ?? null)
+		: null;
+
 	const component = useBuilderStore((s) =>
-		s.selectedNodeId
+		s.selectedNodeId && !zone
 			? (s.components.find((c) => c.id === s.selectedNodeId) ?? null)
 			: null,
 	);
@@ -613,7 +737,9 @@ export function PropertiesPanel() {
 
 	return (
 		<div style={PANEL}>
-			{component ? (
+			{zone ? (
+				<ZoneSection zone={zone} />
+			) : component ? (
 				<NodeSection component={component} />
 			) : connection ? (
 				<EdgeSection connection={connection} />

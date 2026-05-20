@@ -1,14 +1,21 @@
 import yaml from "js-yaml";
-import type { ArchComponent, ArchConnection } from "@/lib/types";
+import type { ArchComponent, ArchConnection, Zone } from "@/lib/types";
 
 export interface DiagramModel {
 	name: string;
 	description: string;
+	zones: Zone[];
 	components: ArchComponent[];
 	connections: ArchConnection[];
 }
 
 export function diagramToYaml(diagram: DiagramModel): string {
+	const zones = diagram.zones.map((z) => ({
+		id: z.id,
+		name: z.name,
+		color: z.color,
+	}));
+
 	const components = diagram.components.map((c) => {
 		const out: Record<string, unknown> = {
 			id: c.id,
@@ -41,7 +48,7 @@ export function diagramToYaml(diagram: DiagramModel): string {
 	});
 
 	return yaml.dump(
-		{ name: diagram.name, description: diagram.description, components, connections },
+		{ name: diagram.name, description: diagram.description, zones, components, connections },
 		{ indent: 2, lineWidth: -1, noRefs: true },
 	);
 }

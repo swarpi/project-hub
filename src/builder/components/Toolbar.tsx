@@ -58,6 +58,7 @@ function ImportModal({
 }) {
 	const dialogRef = useRef<HTMLDialogElement>(null);
 	const loadDiagram = useBuilderStore((s) => s.loadDiagram);
+	const zones = useBuilderStore((s) => s.zones);
 	const reactFlow = useReactFlow();
 	const [tab, setTab] = useState<"upload" | "paste">("upload");
 	const [pasteValue, setPasteValue] = useState("");
@@ -85,15 +86,15 @@ function ImportModal({
 			}
 			setErrors(result.errors);
 			if (result.diagram.components.length > 0) {
-				const positions = computeTierLayout(result.diagram.components);
-				loadDiagram({ ...result.diagram, positions });
+				const layoutResult = computeTierLayout(result.diagram.components, zones);
+				loadDiagram({ ...result.diagram, positions: layoutResult.components });
 				onClose();
 				setErrors([]);
 				setPasteValue("");
 				setTimeout(() => reactFlow.fitView({ padding: 0.2 }), 50);
 			}
 		},
-		[loadDiagram, onClose, reactFlow],
+		[loadDiagram, onClose, reactFlow, zones],
 	);
 
 	const onFileChange = useCallback(
@@ -484,6 +485,8 @@ export function Toolbar() {
 	const removeConnection = useBuilderStore((s) => s.removeConnection);
 	const clearSelection = useBuilderStore((s) => s.clearSelection);
 	const updatePositions = useBuilderStore((s) => s.updatePositions);
+	const updateZone = useBuilderStore((s) => s.updateZone);
+	const zones = useBuilderStore((s) => s.zones);
 
 	const canUndo = useStore(
 		useBuilderStore.temporal,
@@ -510,8 +513,8 @@ export function Toolbar() {
 	const hasSelection = selectedNodeId !== null || selectedEdgeId !== null;
 
 	const getYaml = useCallback(
-		() => diagramToYaml({ name, description, components, connections }),
-		[name, description, components, connections],
+		() => diagramToYaml({ name, description, zones, components, connections }),
+		[name, description, zones, components, connections],
 	);
 
 	const onDownload = useCallback(() => {
@@ -544,10 +547,13 @@ export function Toolbar() {
 	]);
 
 	const onAutoLayout = useCallback(() => {
-		const positions = computeTierLayout(components);
-		updatePositions(positions);
+		const result = computeTierLayout(components, zones);
+		updatePositions(result.components);
+		for (const [id, pos] of Object.entries(result.zones)) {
+			updateZone(id, { position: pos });
+		}
 		setTimeout(() => reactFlow.fitView({ padding: 0.2 }), 50);
-	}, [components, updatePositions, reactFlow]);
+	}, [components, zones, updatePositions, updateZone, reactFlow]);
 
 	// Keyboard shortcuts (Delete/Backspace handled by React Flow via onNodesChange/onEdgesChange)
 	useEffect(() => {

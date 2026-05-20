@@ -3,7 +3,6 @@ import type { Node, NodeProps } from "@xyflow/react";
 import type { ArchComponent } from "@/lib/types";
 import {
 	COLORS,
-	TIER_LABELS,
 	NODE_W,
 	getTierAccentElements,
 	getTierBadgeStyle,
@@ -19,7 +18,9 @@ export type ArchComponentNodeType = Node<ArchComponent, "archComponent">;
 function NodeTooltipContent({ data }: { data: ArchComponent }) {
 	const connections = useBuilderStore((s) => s.connections);
 	const components = useBuilderStore((s) => s.components);
+	const zones = useBuilderStore((s) => s.zones);
 	const color = COLORS[(data.color as ColorKey) ?? "indigo"];
+	const zoneName = zones.find((z) => z.id === data.tier)?.name ?? data.tier;
 	const tierInfo = TIER_EXPLANATIONS[data.tier];
 
 	const outgoing = connections.filter((c) => c.from === data.id);
@@ -67,7 +68,7 @@ function NodeTooltipContent({ data }: { data: ArchComponent }) {
 					color: color.main,
 					border: `1px solid ${color.border}`,
 				}}>
-					{TIER_LABELS[data.tier]} Tier
+					{zoneName}
 				</span>
 			</div>
 			{tierInfo && (
@@ -181,7 +182,9 @@ export function ArchComponentNode({
 	data,
 	selected,
 }: NodeProps<ArchComponentNodeType>): React.ReactElement {
+	const zones = useBuilderStore((s) => s.zones);
 	const color = COLORS[(data.color as ColorKey) ?? "indigo"];
+	const zoneName = zones.find((z) => z.id === data.tier)?.name ?? data.tier;
 	const active = selected ?? false;
 
 	const handleStyle = {
@@ -216,7 +219,7 @@ export function ArchComponentNode({
 							border: `1.5px solid ${active ? color.main : "var(--wf-border)"}`,
 							borderRadius: "12px",
 							padding:
-								data.tier === "service"
+								data.tier === "zone-service"
 									? "10px 12px 10px 15px"
 									: "10px 12px",
 							boxShadow: active
@@ -271,7 +274,7 @@ export function ArchComponentNode({
 											...getTierBadgeStyle(data.tier, color),
 										}}
 									>
-										{TIER_LABELS[data.tier] || data.tier}
+										{zoneName}
 									</span>
 									<span
 										style={{

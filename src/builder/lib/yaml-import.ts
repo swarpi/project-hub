@@ -2,14 +2,19 @@ import yaml from "js-yaml";
 import type { DiagramModel } from "./yaml-export";
 import type { ArchComponent, ArchConnection } from "@/lib/types";
 
-const VALID_TIERS = new Set(["client", "service", "engine", "data"]);
-const VALID_COLORS = new Set(["indigo", "amber", "green", "blue"]);
+const LEGACY_TIER_MAP: Record<string, string> = {
+	client: "zone-client",
+	service: "zone-service",
+	engine: "zone-engine",
+	data: "zone-data",
+};
+const VALID_COLORS = new Set(["indigo", "amber", "green", "blue", "rose", "teal", "purple", "slate"]);
 const VALID_STYLES = new Set(["sync", "async", "stream"]);
 const TIER_COLOR: Record<string, string> = {
-	client: "indigo",
-	service: "amber",
-	engine: "green",
-	data: "blue",
+	"zone-client": "indigo",
+	"zone-service": "amber",
+	"zone-engine": "green",
+	"zone-data": "blue",
 };
 
 export function yamlToDiagram(yamlString: string): {
@@ -24,14 +29,14 @@ export function yamlToDiagram(yamlString: string): {
 	} catch (e) {
 		const msg = e instanceof Error ? e.message : String(e);
 		return {
-			diagram: { name: "Untitled", description: "", components: [], connections: [] },
+			diagram: { name: "Untitled", description: "", zones: [], components: [], connections: [] },
 			errors: [`Invalid YAML: ${msg}`],
 		};
 	}
 
 	if (typeof raw !== "object" || raw === null || Array.isArray(raw)) {
 		return {
-			diagram: { name: "Untitled", description: "", components: [], connections: [] },
+			diagram: { name: "Untitled", description: "", zones: [], components: [], connections: [] },
 			errors: ["YAML root must be an object with name, components, and connections"],
 		};
 	}
@@ -68,15 +73,18 @@ export function yamlToDiagram(yamlString: string): {
 			continue;
 		}
 
-		const tier = String(c.tier ?? "");
-		if (!VALID_TIERS.has(tier)) {
+		let tier = String(c.tier ?? "");
+		if (LEGACY_TIER_MAP[tier]) {
+			tier = LEGACY_TIER_MAP[tier];
+		}
+		if (!tier.startsWith("zone-") && !tier.startsWith("zone_")) {
 			errors.push(`Component '${c.id}' has invalid tier '${tier}', skipping`);
 			continue;
 		}
 
 		let color = String(c.color ?? "");
 		if (!VALID_COLORS.has(color)) {
-			color = TIER_COLOR[tier];
+			color = TIER_COLOR[tier] ?? "indigo";
 		}
 
 		const comp: ArchComponent = {
@@ -84,7 +92,7 @@ export function yamlToDiagram(yamlString: string): {
 			title: c.title,
 			description: typeof c.description === "string" ? c.description : "",
 			technology: typeof c.technology === "string" ? c.technology : "",
-			tier: tier as ArchComponent["tier"],
+			tier,
 			color: color as ArchComponent["color"],
 		};
 
@@ -141,5 +149,5 @@ export function yamlToDiagram(yamlString: string): {
 		});
 	}
 
-	return { diagram: { name, description, components, connections }, errors };
+	return { diagram: { name, description, zones: [], components, connections }, errors };
 }

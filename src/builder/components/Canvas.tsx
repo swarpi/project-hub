@@ -21,15 +21,17 @@ import type {
 	Connection,
 	Edge,
 } from "@xyflow/react";
-import type { ArchComponent } from "@/lib/types";
+import type { ArchComponent, Zone } from "@/lib/types";
 import "@xyflow/react/dist/style.css";
 import { useBuilderStore } from "../store/builder-store";
 import { ArchComponentNode } from "../nodes/ArchComponentNode";
 import type { ArchComponentNodeType } from "../nodes/ArchComponentNode";
 import { ArchConnectionEdge } from "../edges/ArchConnectionEdge";
 import type { ArchConnectionEdgeType } from "../edges/ArchConnectionEdge";
-import { COLORS, TIER_LABELS, NODE_W } from "../lib/node-styles";
+import { COLORS, NODE_W } from "../lib/node-styles";
 import type { ColorKey } from "../lib/node-styles";
+import { TierZoneNode } from "../nodes/TierZoneNode";
+import type { TierZoneNodeType } from "../nodes/TierZoneNode";
 
 const EMPTY_OVERLAY: CSSProperties = {
 	position: "absolute",
@@ -51,15 +53,11 @@ const EMPTY_TEXT: CSSProperties = {
 	lineHeight: 1.6,
 };
 
-const TIER_COLOR_MAP = {
-	client: "indigo",
-	service: "amber",
-	engine: "green",
-	data: "blue",
-} as const;
+type CanvasNodeType = TierZoneNodeType | ArchComponentNodeType;
 
 const nodeTypes = {
 	archComponent: ArchComponentNode,
+	tierZone: TierZoneNode,
 } as const;
 
 const edgeTypes = {
@@ -86,6 +84,9 @@ function pickHandles(
 }
 
 export function Canvas(): React.ReactElement {
+	const zones = useBuilderStore((s) => s.zones);
+	const updateZone = useBuilderStore((s) => s.updateZone);
+	const removeZone = useBuilderStore((s) => s.removeZone);
 	const components = useBuilderStore((s) => s.components);
 	const positions = useBuilderStore((s) => s.positions);
 	const connections = useBuilderStore((s) => s.connections);
@@ -105,6 +106,22 @@ export function Canvas(): React.ReactElement {
 	const clearSelection = useBuilderStore((s) => s.clearSelection);
 	const reactFlow = useReactFlow();
 
+	const zoneNodes = useMemo<TierZoneNodeType[]>(
+		() =>
+			zones.map((zone) => ({
+				id: zone.id,
+				type: "tierZone" as const,
+				position: zone.position,
+				data: { zone },
+				selectable: true,
+				draggable: true,
+				deletable: true,
+				connectable: false,
+				style: { width: zone.width, height: zone.height, zIndex: -1 },
+			})),
+		[zones],
+	);
+
 	const onDragOver = useCallback((e: React.DragEvent) => {
 		e.preventDefault();
 		e.dataTransfer.dropEffect = "move";
@@ -115,51 +132,70 @@ export function Canvas(): React.ReactElement {
 			e.preventDefault();
 			const tier = e.dataTransfer.getData("application/reactflow-tier");
 			if (!tier) return;
+			const zone = zones.find((z) => z.id === tier);
+			const zonePos = zone?.position ?? { x: 0, y: 0 };
 			const position = reactFlow.screenToFlowPosition({
 				x: e.clientX,
 				y: e.clientY,
 			});
+			const relativePosition = {
+				x: position.x - zonePos.x,
+				y: position.y - zonePos.y,
+			};
 			const id = `comp_${Date.now()}`;
 			const comp: ArchComponent = {
 				id,
-				title: `New ${TIER_LABELS[tier]} Component`,
+				title: `New ${zone?.name ?? "Unknown"} Component`,
 				description: "",
 				technology: "",
-				tier: tier as ArchComponent["tier"],
-				color: TIER_COLOR_MAP[tier as ArchComponent["tier"]],
+				tier,
+				color: (zone?.color ?? "indigo") as ArchComponent["color"],
 			};
-			addComponentAtPosition(comp, position);
+			addComponentAtPosition(comp, relativePosition);
 			selectNode(id);
 		},
-		[reactFlow, addComponentAtPosition, selectNode],
+		[reactFlow, zones, addComponentAtPosition, selectNode],
 	);
 
 	const storeNodes = useMemo<ArchComponentNodeType[]>(
 		() =>
-			components.map((component) => ({
-				id: component.id,
-				type: "archComponent" as const,
-				position: positions[component.id] ?? { x: 0, y: 0 },
-				data: component,
-				selected: selectedNodeId === component.id,
-				width: NODE_W,
-			})),
-		[components, positions, selectedNodeId],
+			components.map((component) => {
+				const zoneExists = zones.some((z) => z.id === component.tier);
+				return {
+					id: component.id,
+					type: "archComponent" as const,
+					position: positions[component.id] ?? { x: 0, y: 0 },
+					data: component,
+					selected: selectedNodeId === component.id,
+					width: NODE_W,
+					...(zoneExists
+						? { parentId: component.tier, extent: "parent" as const }
+						: {}),
+				};
+			}),
+		[components, positions, selectedNodeId, zones],
 	);
 
 	const storeEdges = useMemo<ArchConnectionEdgeType[]>(
 		() =>
 			connections.map((conn) => {
-				const sourceColor = (components.find((c) => c.id === conn.from)
-					?.color ?? "indigo") as ColorKey;
+				const sourceComp = components.find((c) => c.id === conn.from);
+				const targetComp = components.find((c) => c.id === conn.to);
+				const sourceColor = (sourceComp?.color ?? "indigo") as ColorKey;
 				const edgeId = `${conn.from}->${conn.to}`;
 
 				const sourcePos = positions[conn.from];
 				const targetPos = positions[conn.to];
-				const handles =
-					sourcePos && targetPos
-						? pickHandles(sourcePos, targetPos)
-						: { sourceHandle: "bottom-src", targetHandle: "top-tgt" };
+				let handles = { sourceHandle: "bottom-src", targetHandle: "top-tgt" };
+
+				if (sourcePos && targetPos) {
+					const sourceZone = zones.find((z) => z.id === sourceComp?.tier)?.position ?? { x: 0, y: 0 };
+					const targetZone = zones.find((z) => z.id === targetComp?.tier)?.position ?? { x: 0, y: 0 };
+					handles = pickHandles(
+						{ x: sourcePos.x + sourceZone.x, y: sourcePos.y + sourceZone.y },
+						{ x: targetPos.x + targetZone.x, y: targetPos.y + targetZone.y },
+					);
+				}
 
 				return {
 					id: edgeId,
@@ -183,15 +219,20 @@ export function Canvas(): React.ReactElement {
 					},
 				};
 			}),
-		[connections, components, selectedEdgeId, positions],
+		[connections, components, selectedEdgeId, positions, zones],
 	);
 
-	const [nodes, setNodes] = useState(storeNodes);
-	const [prevStoreNodes, setPrevStoreNodes] = useState(storeNodes);
+	const combinedNodes = useMemo<CanvasNodeType[]>(
+		() => [...zoneNodes, ...storeNodes],
+		[zoneNodes, storeNodes],
+	);
 
-	if (prevStoreNodes !== storeNodes) {
-		setPrevStoreNodes(storeNodes);
-		setNodes(storeNodes);
+	const [nodes, setNodes] = useState<CanvasNodeType[]>(combinedNodes);
+	const [prevCombinedNodes, setPrevCombinedNodes] = useState(combinedNodes);
+
+	if (prevCombinedNodes !== combinedNodes) {
+		setPrevCombinedNodes(combinedNodes);
+		setNodes(combinedNodes);
 	}
 
 	const [edges, setEdges] = useState(storeEdges);
@@ -202,8 +243,8 @@ export function Canvas(): React.ReactElement {
 		setEdges(storeEdges);
 	}
 
-	const onNodesChange: OnNodesChange<ArchComponentNodeType> = useCallback(
-		(changes: NodeChange<ArchComponentNodeType>[]) => {
+	const onNodesChange: OnNodesChange<CanvasNodeType> = useCallback(
+		(changes: NodeChange<CanvasNodeType>[]) => {
 			setNodes((prev) => applyNodeChanges(changes, prev));
 		},
 		[],
@@ -221,11 +262,19 @@ export function Canvas(): React.ReactElement {
 			nodes,
 			edges,
 		}: {
-			nodes: ArchComponentNodeType[];
+			nodes: CanvasNodeType[];
 			edges: ArchConnectionEdgeType[];
 		}) => {
-			const deletedNodeIds = new Set(nodes.map((n) => n.id));
 			for (const node of nodes) {
+				if (node.type === "tierZone") {
+					removeZone(node.id);
+				}
+			}
+			const componentNodes = nodes.filter(
+				(n): n is ArchComponentNodeType => n.type !== "tierZone",
+			);
+			const deletedNodeIds = new Set(componentNodes.map((n) => n.id));
+			for (const node of componentNodes) {
 				removeComponent(node.id);
 			}
 			for (const edge of edges) {
@@ -238,17 +287,21 @@ export function Canvas(): React.ReactElement {
 				removeConnection(from, to);
 			}
 		},
-		[removeComponent, removeConnection],
+		[removeComponent, removeConnection, removeZone],
 	);
 
-	const onNodeDragStop: NodeMouseHandler<ArchComponentNodeType> = useCallback(
+	const onNodeDragStop: NodeMouseHandler<CanvasNodeType> = useCallback(
 		(_event, node) => {
+			if (node.type === "tierZone") {
+				updateZone(node.id, { position: node.position });
+				return;
+			}
 			updatePositions({ [node.id]: node.position });
 		},
-		[updatePositions],
+		[updatePositions, updateZone],
 	);
 
-	const onNodeClick: NodeMouseHandler<ArchComponentNodeType> = useCallback(
+	const onNodeClick: NodeMouseHandler<CanvasNodeType> = useCallback(
 		(_event, node) => {
 			selectNode(node.id);
 		},
@@ -270,23 +323,29 @@ export function Canvas(): React.ReactElement {
 		(event: React.MouseEvent) => {
 			const target = event.target as HTMLElement;
 			if (target.closest(".react-flow__node")) return;
+			const defaultZone = zones[0];
+			if (!defaultZone) return;
 			const position = reactFlow.screenToFlowPosition({
 				x: event.clientX,
 				y: event.clientY,
 			});
+			const relativePosition = {
+				x: position.x - defaultZone.position.x,
+				y: position.y - defaultZone.position.y,
+			};
 			const id = `comp_${Date.now()}`;
 			const comp: ArchComponent = {
 				id,
-				title: "New Service Component",
+				title: `New ${defaultZone.name} Component`,
 				description: "",
 				technology: "",
-				tier: "service",
-				color: "amber",
+				tier: defaultZone.id,
+				color: defaultZone.color,
 			};
-			addComponentAtPosition(comp, position);
+			addComponentAtPosition(comp, relativePosition);
 			selectNode(id);
 		},
-		[reactFlow, addComponentAtPosition, selectNode],
+		[reactFlow, zones, addComponentAtPosition, selectNode],
 	);
 
 	const onConnect = useCallback(
@@ -339,7 +398,7 @@ export function Canvas(): React.ReactElement {
 					</div>
 				</div>
 			)}
-			<ReactFlow
+			<ReactFlow<CanvasNodeType, ArchConnectionEdgeType>
 				nodes={nodes}
 				edges={edges}
 				nodeTypes={nodeTypes}
@@ -360,7 +419,10 @@ export function Canvas(): React.ReactElement {
 				snapGrid={[gridSize, gridSize]}
 				zoomOnDoubleClick={false}
 				fitView
-				fitViewOptions={{ padding: 0.2 }}
+				fitViewOptions={{
+					padding: 0.15,
+					nodes: zones.map((z) => ({ id: z.id })),
+				}}
 				minZoom={0.2}
 				maxZoom={3}
 				proOptions={{ hideAttribution: true }}
@@ -408,6 +470,10 @@ export function Canvas(): React.ReactElement {
 				<Controls />
 				<MiniMap
 					nodeColor={(node) => {
+						if (node.type === "tierZone") {
+							const zone = (node.data as { zone: Zone }).zone;
+							return COLORS[zone.color].dim;
+						}
 						const colorKey = (
 							node.data as { color?: string }
 						).color as ColorKey | undefined;
