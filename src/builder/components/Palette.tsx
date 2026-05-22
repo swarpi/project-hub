@@ -68,7 +68,7 @@ export function Palette(): React.ReactElement {
 		>
 			<div
 				style={{
-					fontFamily: "'Space Grotesk', sans-serif",
+					fontFamily: "'Geist', ui-sans-serif, system-ui, sans-serif",
 					fontSize: "11px",
 					fontWeight: 600,
 					color: "var(--wf-text-sec)",
@@ -137,7 +137,7 @@ export function Palette(): React.ReactElement {
 							<div>
 								<span
 									style={{
-										fontFamily: "'Space Grotesk', sans-serif",
+										fontFamily: "'Geist', ui-sans-serif, system-ui, sans-serif",
 										fontSize: "12px",
 										fontWeight: 600,
 										color: "var(--wf-text)",
@@ -148,7 +148,7 @@ export function Palette(): React.ReactElement {
 								</span>
 								<span
 									style={{
-										fontFamily: "'JetBrains Mono', monospace",
+										fontFamily: "'Geist Mono', ui-monospace, SFMono-Regular, monospace",
 										fontSize: "7.5px",
 										color: "var(--wf-text-dim)",
 									}}
@@ -174,7 +174,7 @@ export function Palette(): React.ReactElement {
 					border: "1px dashed var(--wf-border)",
 					borderRadius: 10,
 					cursor: "pointer",
-					fontFamily: "'Space Grotesk', sans-serif",
+					fontFamily: "'Geist', ui-sans-serif, system-ui, sans-serif",
 					fontSize: "11px",
 					fontWeight: 600,
 					color: "var(--wf-text-dim)",

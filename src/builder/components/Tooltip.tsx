@@ -26,7 +26,7 @@ export const TOOLTIP_CARD: CSSProperties = {
   borderRadius: 10,
   padding: "10px 14px",
   boxShadow: "0 8px 32px oklch(0 0 0 / 0.25), 0 2px 8px oklch(0 0 0 / 0.15)",
-  fontFamily: "'Space Grotesk', sans-serif",
+  fontFamily: "'Geist', ui-sans-serif, system-ui, sans-serif",
   fontSize: 11,
   lineHeight: 1.5,
   color: "var(--wf-text, #e0e0e8)",
@@ -162,7 +162,7 @@ export function Tooltip({ content, children, delay = 400, maxWidth = 320, placem
 }
 
 export const TT_HEADING: CSSProperties = {
-  fontFamily: "'Space Grotesk', sans-serif",
+  fontFamily: "'Geist', ui-sans-serif, system-ui, sans-serif",
   fontSize: 12,
   fontWeight: 700,
   color: "var(--wf-text, #e0e0e8)",
@@ -171,7 +171,7 @@ export const TT_HEADING: CSSProperties = {
 };
 
 export const TT_LABEL: CSSProperties = {
-  fontFamily: "'JetBrains Mono', monospace",
+  fontFamily: "'Geist Mono', ui-monospace, SFMono-Regular, monospace",
   fontSize: 9,
   fontWeight: 600,
   textTransform: "uppercase" as const,
@@ -181,7 +181,7 @@ export const TT_LABEL: CSSProperties = {
 };
 
 export const TT_TEXT: CSSProperties = {
-  fontFamily: "'Space Grotesk', sans-serif",
+  fontFamily: "'Geist', ui-sans-serif, system-ui, sans-serif",
   fontSize: 11,
   lineHeight: 1.5,
   color: "var(--wf-text-sec, #bbb)",
@@ -199,7 +199,7 @@ export const TT_BADGE: CSSProperties = {
   display: "inline-flex",
   alignItems: "center",
   gap: 4,
-  fontFamily: "'JetBrains Mono', monospace",
+  fontFamily: "'Geist Mono', ui-monospace, SFMono-Regular, monospace",
   fontSize: 9,
   fontWeight: 500,
   padding: "2px 6px",

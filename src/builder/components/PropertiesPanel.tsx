@@ -13,7 +13,7 @@ const PANEL: CSSProperties = {
 	display: "flex",
 	flexDirection: "column",
 	gap: 16,
-	fontFamily: "'Space Grotesk', sans-serif",
+	fontFamily: "'Geist', ui-sans-serif, system-ui, sans-serif",
 };
 
 const INPUT: CSSProperties = {
@@ -23,7 +23,7 @@ const INPUT: CSSProperties = {
 	border: "1px solid var(--wf-border)",
 	borderRadius: 6,
 	padding: "6px 8px",
-	fontFamily: "'Space Grotesk', sans-serif",
+	fontFamily: "'Geist', ui-sans-serif, system-ui, sans-serif",
 	fontSize: 13,
 	color: "var(--wf-text)",
 	outline: "none",
@@ -40,14 +40,14 @@ const SELECT: CSSProperties = {
 };
 
 const LABEL: CSSProperties = {
-	fontFamily: "'JetBrains Mono', monospace",
+	fontFamily: "'Geist Mono', ui-monospace, SFMono-Regular, monospace",
 	fontSize: 10,
 	color: "var(--wf-text-dim)",
 	marginBottom: 3,
 };
 
 const HEADING: CSSProperties = {
-	fontFamily: "'Space Grotesk', sans-serif",
+	fontFamily: "'Geist', ui-sans-serif, system-ui, sans-serif",
 	fontSize: 11,
 	fontWeight: 600,
 	color: "var(--wf-text-sec)",
@@ -70,14 +70,14 @@ const AI_BTN: CSSProperties = {
 	background: "transparent",
 	border: "1px solid var(--wf-border)",
 	borderRadius: 4,
-	fontFamily: "'JetBrains Mono', monospace",
+	fontFamily: "'Geist Mono', ui-monospace, SFMono-Regular, monospace",
 	fontSize: 9,
 	color: "var(--wf-accent)",
 	transition: "opacity 0.15s ease",
 };
 
 const INLINE_ERROR: CSSProperties = {
-	fontFamily: "'Space Grotesk', sans-serif",
+	fontFamily: "'Geist', ui-sans-serif, system-ui, sans-serif",
 	fontSize: 10,
 	color: "oklch(0.55 0.15 25)",
 	marginTop: 2,
@@ -326,7 +326,7 @@ function NodeSection({ component }: { component: ArchComponent }) {
 						style={{
 							...INPUT,
 							flex: 1,
-							fontFamily: "'JetBrains Mono', monospace",
+							fontFamily: "'Geist Mono', ui-monospace, SFMono-Regular, monospace",
 							fontSize: 10,
 							color: "var(--wf-text-dim)",
 							cursor: "default",
@@ -488,7 +488,7 @@ function NodeSection({ component }: { component: ArchComponent }) {
 									}}
 								>
 									<div style={{
-										fontFamily: "'JetBrains Mono', monospace",
+										fontFamily: "'Geist Mono', ui-monospace, SFMono-Regular, monospace",
 										fontSize: 11,
 										fontWeight: 600,
 										color: c.main,
@@ -498,7 +498,7 @@ function NodeSection({ component }: { component: ArchComponent }) {
 									</div>
 									{sub.detail && (
 										<div style={{
-											fontFamily: "'Space Grotesk', sans-serif",
+											fontFamily: "'Geist', ui-sans-serif, system-ui, sans-serif",
 											fontSize: 11,
 											color: "var(--wf-text-sec)",
 											lineHeight: 1.4,
@@ -571,7 +571,7 @@ function EdgeSection({ connection }: { connection: ArchConnection }) {
 									flex: 1,
 									padding: "4px 10px",
 									borderRadius: 6,
-									fontFamily: "'JetBrains Mono', monospace",
+									fontFamily: "'Geist Mono', ui-monospace, SFMono-Regular, monospace",
 									fontSize: 10,
 									cursor: "pointer",
 									border: active
@@ -679,7 +679,7 @@ function ZoneSection({ zone }: { zone: Zone }) {
 
 			<div
 				style={{
-					fontFamily: "'Space Grotesk', sans-serif",
+					fontFamily: "'Geist', ui-sans-serif, system-ui, sans-serif",
 					fontSize: 11,
 					color: "var(--wf-text-sec)",
 				}}
@@ -700,7 +700,7 @@ function ZoneSection({ zone }: { zone: Zone }) {
 					border: "1px solid oklch(0.7 0.12 15)",
 					background: "oklch(0.95 0.03 15)",
 					color: "oklch(0.45 0.18 15)",
-					fontFamily: "'Space Grotesk', sans-serif",
+					fontFamily: "'Geist', ui-sans-serif, system-ui, sans-serif",
 					fontSize: 12,
 					fontWeight: 600,
 					cursor: "pointer",

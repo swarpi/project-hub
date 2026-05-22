@@ -127,7 +127,7 @@ const BANNER: CSSProperties = {
 };
 
 const BANNER_TEXT: CSSProperties = {
-	fontFamily: "'Space Grotesk', sans-serif",
+	fontFamily: "'Geist', ui-sans-serif, system-ui, sans-serif",
 	fontSize: 12,
 	color: "var(--wf-text)",
 	flex: 1,
@@ -136,7 +136,7 @@ const BANNER_TEXT: CSSProperties = {
 const BANNER_BTN: CSSProperties = {
 	padding: "4px 12px",
 	borderRadius: 6,
-	fontFamily: "'Space Grotesk', sans-serif",
+	fontFamily: "'Geist', ui-sans-serif, system-ui, sans-serif",
 	fontSize: 11,
 	fontWeight: 500,
 	cursor: "pointer",

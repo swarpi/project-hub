@@ -1,43 +1,9 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import type { Orchestration, Agent, Connection } from '@/lib/types';
-
-const COLORS = {
-  indigo: {
-    main: 'oklch(0.45 0.18 265)',
-    light: 'oklch(0.93 0.04 265)',
-    dim: 'oklch(0.45 0.18 265 / 0.12)',
-    border: 'oklch(0.45 0.18 265 / 0.2)',
-  },
-  amber: {
-    main: 'oklch(0.68 0.14 65)',
-    light: 'oklch(0.96 0.04 65)',
-    dim: 'oklch(0.68 0.14 65 / 0.15)',
-    border: 'oklch(0.68 0.14 65 / 0.25)',
-  },
-  green: {
-    main: 'oklch(0.58 0.14 155)',
-    light: 'oklch(0.94 0.04 155)',
-    dim: 'oklch(0.58 0.14 155 / 0.12)',
-    border: 'oklch(0.58 0.14 155 / 0.2)',
-  },
-  blue: {
-    main: 'oklch(0.55 0.15 240)',
-    light: 'oklch(0.94 0.04 240)',
-    dim: 'oklch(0.55 0.15 240 / 0.12)',
-    border: 'oklch(0.55 0.15 240 / 0.2)',
-  },
-};
-
-const C = {
-  border: 'var(--wf-border)',
-  borderStrong: 'var(--wf-border-strong)',
-  textPrimary: 'var(--wf-text)',
-  textSec: 'var(--wf-text-sec)',
-  textDim: 'var(--wf-text-dim)',
-  bg: 'var(--wf-bg)',
-  card: 'var(--wf-card)',
-  labelBg: 'var(--wf-label-bg)',
-};
+import { GRAPH_COLORS, GC, getSmartPort, getControlPoint } from './graph-utils';
+import type { Position, Positions } from './graph-utils';
+import { DotGrid } from './DotGrid';
+import { usePanZoomDrag } from './usePanZoomDrag';
 
 const ICONS: Record<string, React.ReactNode> = {
   architect: (
@@ -121,86 +87,12 @@ function getAccentElements(kind: AgentKind | undefined, colorMain: string, activ
 const NODE_W = 170;
 const NODE_H = 105;
 
-interface Position {
-  x: number;
-  y: number;
-}
-
-interface Positions {
-  [key: string]: Position;
-}
-
-function DotGrid({ W, H }: { W: number; H: number }) {
-  const gap = 32;
-  const cols = Math.ceil(W / gap) + 1;
-  const rows = Math.ceil(H / gap) + 1;
-  const pts: [number, number][] = [];
-  for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) pts.push([c * gap, r * gap]);
-
-  return (
-    <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none' }}>
-      <defs>
-        <radialGradient id="dgFade" cx="50%" cy="50%" r="55%">
-          <stop offset="0%" stopColor="oklch(0.72 0.04 265)" stopOpacity="0.5" />
-          <stop offset="100%" stopColor="oklch(0.72 0.04 265)" stopOpacity="0.04" />
-        </radialGradient>
-      </defs>
-      {pts.map(([x, y], i) => (
-        <circle key={i} cx={x} cy={y} r="1.1" fill="url(#dgFade)" />
-      ))}
-    </svg>
-  );
-}
-
-function getSmartPort(
-  fromPos: Position, toPos: Position,
-  nodeW: number, nodeH: number,
-): { source: Position; sourceDir: string; target: Position; targetDir: string } {
-  const fromCx = fromPos.x + nodeW / 2;
-  const fromCy = fromPos.y + nodeH / 2;
-  const toCx = toPos.x + nodeW / 2;
-  const toCy = toPos.y + nodeH / 2;
-  const hw = nodeW / 2;
-  const hh = nodeH / 2;
-
-  const pickSide = (cx: number, cy: number, otherCx: number, otherCy: number) => {
-    const ddx = otherCx - cx;
-    const ddy = otherCy - cy;
-    if (Math.abs(ddx / hw) > Math.abs(ddy / hh)) {
-      return ddx > 0
-        ? { point: { x: cx + hw, y: cy }, dir: 'right' }
-        : { point: { x: cx - hw, y: cy }, dir: 'left' };
-    }
-    return ddy > 0
-      ? { point: { x: cx, y: cy + hh }, dir: 'bottom' }
-      : { point: { x: cx, y: cy - hh }, dir: 'top' };
-  };
-
-  const src = pickSide(fromCx, fromCy, toCx, toCy);
-  const tgt = pickSide(toCx, toCy, fromCx, fromCy);
-  return { source: src.point, sourceDir: src.dir, target: tgt.point, targetDir: tgt.dir };
-}
-
-function ctrlOffset(distance: number, curvature: number): number {
-  return distance >= 0 ? 0.5 * distance : curvature * 25 * Math.sqrt(-distance);
-}
-
-function getControlPoint(dir: string, x: number, y: number, tx: number, ty: number, curvature: number): Position {
-  switch (dir) {
-    case 'left':   return { x: x - ctrlOffset(x - tx, curvature), y };
-    case 'right':  return { x: x + ctrlOffset(tx - x, curvature), y };
-    case 'top':    return { x, y: y - ctrlOffset(y - ty, curvature) };
-    case 'bottom': return { x, y: y + ctrlOffset(ty - y, curvature) };
-    default:       return { x, y };
-  }
-}
-
 function ConnectionLayer({ positions, connections, agents }: { positions: Positions; connections: Connection[]; agents: Agent[] }) {
   if (Object.keys(positions).length === 0) return null;
 
   const getColor = (agentId: string) => {
     const agent = agents.find((a) => a.id === agentId);
-    return COLORS[agent?.color || 'indigo'];
+    return GRAPH_COLORS[agent?.color || 'indigo'];
   };
 
   const CURVATURE = 0.25;
@@ -242,7 +134,7 @@ function ConnectionLayer({ positions, connections, agents }: { positions: Positi
   return (
     <svg style={{ position: 'absolute', left: 0, top: 0, width: 1, height: 1, pointerEvents: 'none', overflow: 'visible' }}>
       <defs>
-        {Object.entries(COLORS).map(([name, color]) => (
+        {Object.entries(GRAPH_COLORS).map(([name, color]) => (
           <marker key={name} id={`arr-${name}`} markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto">
             <path d="M1.5 1.5L7.5 5 1.5 8.5" stroke={color.main} strokeWidth="1.2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
           </marker>
@@ -265,13 +157,13 @@ function ConnectionLayer({ positions, connections, agents }: { positions: Positi
           <foreignObject x={l.mid.x - 40} y={l.mid.y - 9} width="80" height="18" style={{ overflow: 'visible' }}>
             <div
               style={{
-                fontFamily: "'JetBrains Mono', monospace",
+                fontFamily: "'Geist Mono', ui-monospace, SFMono-Regular, monospace",
                 fontSize: '7px',
                 lineHeight: 1,
                 padding: '3px 6px',
                 borderRadius: '9px',
-                background: C.labelBg,
-                border: `1px solid ${C.border}`,
+                background: GC.labelBg,
+                border: `1px solid ${GC.border}`,
                 color: 'var(--wf-text-sec)',
                 whiteSpace: 'nowrap',
                 textAlign: 'center',
@@ -307,7 +199,7 @@ function NodeCard({
   onDrag: (id: string, e: React.MouseEvent) => void;
   isDragging: boolean;
 }) {
-  const color = COLORS[agent.color || 'indigo'];
+  const color = GRAPH_COLORS[agent.color || 'indigo'];
   const [hovered, setHovered] = useState(false);
   const active = selected || hovered;
   const icon = ICONS[agent.id] || ICONS.default;
@@ -336,8 +228,8 @@ function NodeCard({
       <div
         style={{
           width: '100%',
-          background: active ? color.light : C.card,
-          border: `1.5px solid ${active ? color.main : C.border}`,
+          background: active ? color.light : GC.card,
+          border: `1.5px solid ${active ? color.main : GC.border}`,
           borderRadius: '12px',
           padding: agent.kind === 'decision' ? '10px 12px 10px 15px' : '10px 12px',
           boxShadow: isDragging
@@ -360,7 +252,7 @@ function NodeCard({
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <span
             style={{
-              fontFamily: "'JetBrains Mono', monospace",
+              fontFamily: "'Geist Mono', ui-monospace, SFMono-Regular, monospace",
               fontSize: '8px',
               fontWeight: 500,
               color: color.main,
@@ -376,10 +268,10 @@ function NodeCard({
         </div>
         <div
           style={{
-            fontFamily: "'Space Grotesk', sans-serif",
+            fontFamily: "'Geist', ui-sans-serif, system-ui, sans-serif",
             fontSize: '13px',
             fontWeight: 700,
-            color: C.textPrimary,
+            color: GC.textPrimary,
             lineHeight: 1.2,
           }}
         >
@@ -390,7 +282,7 @@ function NodeCard({
             <span
               key={o}
               style={{
-                fontFamily: "'JetBrains Mono', monospace",
+                fontFamily: "'Geist Mono', ui-monospace, SFMono-Regular, monospace",
                 fontSize: '7.5px',
                 padding: '1px 5px',
                 borderRadius: '8px',
@@ -409,7 +301,7 @@ function NodeCard({
 }
 
 function DetailPanel({ agent, onClose, repoUrl }: { agent: Agent; onClose: () => void; repoUrl: string }) {
-  const color = COLORS[agent.color || 'indigo'];
+  const color = GRAPH_COLORS[agent.color || 'indigo'];
   const icon = ICONS[agent.id] || ICONS.default;
 
   return (
@@ -420,7 +312,7 @@ function DetailPanel({ agent, onClose, repoUrl }: { agent: Agent; onClose: () =>
         left: '50%',
         transform: 'translate(-50%, -50%)',
         width: 340,
-        background: C.card,
+        background: GC.card,
         border: `1.5px solid ${color.main}`,
         borderRadius: '18px',
         padding: '24px',
@@ -438,13 +330,13 @@ function DetailPanel({ agent, onClose, repoUrl }: { agent: Agent; onClose: () =>
           width: 26,
           height: 26,
           borderRadius: '8px',
-          border: `1.5px solid ${C.border}`,
+          border: `1.5px solid ${GC.border}`,
           background: 'transparent',
           cursor: 'pointer',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          color: C.textDim,
+          color: GC.textDim,
           fontSize: '13px',
         }}
       >
@@ -455,7 +347,7 @@ function DetailPanel({ agent, onClose, repoUrl }: { agent: Agent; onClose: () =>
         <span style={{ color: color.main }}>{icon}</span>
         <span
           style={{
-            fontFamily: "'JetBrains Mono', monospace",
+            fontFamily: "'Geist Mono', ui-monospace, SFMono-Regular, monospace",
             fontSize: '9px',
             color: color.main,
             background: color.light,
@@ -469,13 +361,13 @@ function DetailPanel({ agent, onClose, repoUrl }: { agent: Agent; onClose: () =>
         {agent.kind && (
           <span
             style={{
-              fontFamily: "'JetBrains Mono', monospace",
+              fontFamily: "'Geist Mono', ui-monospace, SFMono-Regular, monospace",
               fontSize: '9px',
-              color: C.textDim,
+              color: GC.textDim,
               background: 'oklch(0.95 0.005 265)',
               padding: '3px 8px',
               borderRadius: '10px',
-              border: `1px solid ${C.border}`,
+              border: `1px solid ${GC.border}`,
               textTransform: 'capitalize',
             }}
           >
@@ -486,10 +378,10 @@ function DetailPanel({ agent, onClose, repoUrl }: { agent: Agent; onClose: () =>
 
       <div
         style={{
-          fontFamily: "'Space Grotesk', sans-serif",
+          fontFamily: "'Geist', ui-sans-serif, system-ui, sans-serif",
           fontSize: '22px',
           fontWeight: 700,
-          color: C.textPrimary,
+          color: GC.textPrimary,
           marginBottom: '8px',
         }}
       >
@@ -498,9 +390,9 @@ function DetailPanel({ agent, onClose, repoUrl }: { agent: Agent; onClose: () =>
 
       <div
         style={{
-          fontFamily: "'Space Grotesk', sans-serif",
+          fontFamily: "'Geist', ui-sans-serif, system-ui, sans-serif",
           fontSize: '13px',
-          color: C.textSec,
+          color: GC.textSec,
           lineHeight: 1.6,
           marginBottom: '20px',
         }}
@@ -510,11 +402,11 @@ function DetailPanel({ agent, onClose, repoUrl }: { agent: Agent; onClose: () =>
 
       <div
         style={{
-          fontFamily: "'JetBrains Mono', monospace",
+          fontFamily: "'Geist Mono', ui-monospace, SFMono-Regular, monospace",
           fontSize: '9px',
           textTransform: 'uppercase',
           letterSpacing: '0.1em',
-          color: C.textDim,
+          color: GC.textDim,
           marginBottom: '8px',
         }}
       >
@@ -525,7 +417,7 @@ function DetailPanel({ agent, onClose, repoUrl }: { agent: Agent; onClose: () =>
           <span
             key={o}
             style={{
-              fontFamily: "'JetBrains Mono', monospace",
+              fontFamily: "'Geist Mono', ui-monospace, SFMono-Regular, monospace",
               fontSize: '10px',
               padding: '4px 10px',
               borderRadius: '8px',
@@ -549,7 +441,7 @@ function DetailPanel({ agent, onClose, repoUrl }: { agent: Agent; onClose: () =>
             alignItems: 'center',
             justifyContent: 'center',
             gap: '6px',
-            fontFamily: "'Space Grotesk', sans-serif",
+            fontFamily: "'Geist', ui-sans-serif, system-ui, sans-serif",
             fontSize: '13px',
             fontWeight: 600,
             color: color.main,
@@ -582,97 +474,14 @@ export default function OrchestrationGraph({ orchestration, projectName, project
   const [selected, setSelected] = useState<string | null>(null);
   const [positions, setPositions] = useState<Positions>({});
   const [dims, setDims] = useState({ W: 1200, H: 800 });
-  const [draggingId, setDraggingId] = useState<string | null>(null);
-  const dragRef = useRef<{ id: string; offsetX: number; offsetY: number } | null>(null);
-  const dragDistRef = useRef(0);
-  const DRAG_THRESHOLD = 3;
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const INITIAL_SCALE = 1.1;
-  const scaleRef = useRef(INITIAL_SCALE);
-  const panRef = useRef({ x: 0, y: 0 });
-  const [, forceRender] = useState(0);
-  const rerender = useCallback(() => forceRender((n) => n + 1), []);
+  const { scaleRef, panRef, draggingId, dragDistRef, DRAG_THRESHOLD, handleDragStart, handleCanvasPanStart, rerender } =
+    usePanZoomDrag({ containerRef, initialScale: 1.1 });
 
-  const panDragRef = useRef<{ startX: number; startY: number } | null>(null);
-
-  const toCanvas = useCallback((screenX: number, screenY: number) => ({
-    x: (screenX - panRef.current.x) / scaleRef.current,
-    y: (screenY - panRef.current.y) / scaleRef.current,
-  }), []);
-
-  const handleDragStart = useCallback((id: string, e: React.MouseEvent) => {
-    const pos = positions[id];
-    if (!pos) return;
-    const canvas = toCanvas(e.clientX, e.clientY);
-    dragRef.current = { id, offsetX: canvas.x - pos.x, offsetY: canvas.y - pos.y };
-    dragDistRef.current = 0;
-    const startX = e.clientX;
-    const startY = e.clientY;
-    setDraggingId(id);
-
-    const onMove = (ev: MouseEvent) => {
-      const drag = dragRef.current;
-      if (!drag) return;
-      dragDistRef.current = Math.max(dragDistRef.current, Math.abs(ev.clientX - startX) + Math.abs(ev.clientY - startY));
-      const c = toCanvas(ev.clientX, ev.clientY);
-      setPositions((prev) => ({ ...prev, [drag.id]: { x: c.x - drag.offsetX, y: c.y - drag.offsetY } }));
-    };
-
-    const onUp = () => {
-      dragRef.current = null;
-      setDraggingId(null);
-      window.removeEventListener('mousemove', onMove);
-      window.removeEventListener('mouseup', onUp);
-    };
-
-    window.addEventListener('mousemove', onMove);
-    window.addEventListener('mouseup', onUp);
-  }, [positions, toCanvas]);
-
-  const handleCanvasPanStart = useCallback((e: React.MouseEvent) => {
-    if ((e.target as HTMLElement).closest('[data-node-id]')) return;
-    e.preventDefault();
-    panDragRef.current = { startX: e.clientX - panRef.current.x, startY: e.clientY - panRef.current.y };
-    dragDistRef.current = 0;
-    const startX = e.clientX;
-    const startY = e.clientY;
-
-    const onMove = (ev: MouseEvent) => {
-      if (!panDragRef.current) return;
-      dragDistRef.current = Math.max(dragDistRef.current, Math.abs(ev.clientX - startX) + Math.abs(ev.clientY - startY));
-      panRef.current = { x: ev.clientX - panDragRef.current.startX, y: ev.clientY - panDragRef.current.startY };
-      rerender();
-    };
-
-    const onUp = () => {
-      panDragRef.current = null;
-      window.removeEventListener('mousemove', onMove);
-      window.removeEventListener('mouseup', onUp);
-    };
-
-    window.addEventListener('mousemove', onMove);
-    window.addEventListener('mouseup', onUp);
-  }, [rerender]);
-
-  const handleWheel = useCallback((e: WheelEvent) => {
-    e.preventDefault();
-    const delta = -e.deltaY * 0.001;
-    const oldScale = scaleRef.current;
-    const newScale = Math.min(3, Math.max(0.3, oldScale + delta * oldScale));
-    const cx = (e.clientX - panRef.current.x) / oldScale;
-    const cy = (e.clientY - panRef.current.y) / oldScale;
-    panRef.current = { x: e.clientX - cx * newScale, y: e.clientY - cy * newScale };
-    scaleRef.current = newScale;
-    rerender();
-  }, [rerender]);
-
-  useEffect(() => {
-    const el = containerRef.current;
-    if (!el) return;
-    el.addEventListener('wheel', handleWheel, { passive: false });
-    return () => el.removeEventListener('wheel', handleWheel);
-  }, [handleWheel]);
+  const onNodeDrag = useCallback((id: string, e: React.MouseEvent) => {
+    handleDragStart(id, e, positions, setPositions);
+  }, [handleDragStart, positions]);
 
   const compute = useCallback(() => {
     if (typeof window === 'undefined') return;
@@ -681,7 +490,7 @@ export default function OrchestrationGraph({ orchestration, projectName, project
     setDims({ W, H });
 
     panRef.current = { x: W / 2, y: H / 2 };
-    scaleRef.current = INITIAL_SCALE;
+    scaleRef.current = 1.1;
 
     const agents = orchestration.agents;
     const n = agents.length;
@@ -718,7 +527,7 @@ export default function OrchestrationGraph({ orchestration, projectName, project
 
     setPositions(newPositions);
     rerender();
-  }, [orchestration, rerender]);
+  }, [orchestration, panRef, scaleRef, rerender]);
 
   useEffect(() => {
     compute();
@@ -753,14 +562,12 @@ export default function OrchestrationGraph({ orchestration, projectName, project
         height: '100%',
         position: 'relative',
         overflow: 'hidden',
-        background: C.bg,
+        background: GC.bg,
         cursor: draggingId ? 'grabbing' : 'default',
       }}
       onMouseDown={handleCanvasPanStart}
     >
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500&display=swap');
-
         @keyframes fadeUp {
           from { opacity: 0; transform: translateY(8px); }
           to { opacity: 1; transform: translateY(0); }
@@ -817,14 +624,13 @@ export default function OrchestrationGraph({ orchestration, projectName, project
               pos={positions[agent.id]}
               selected={selected === agent.id}
               onClick={(id) => { if (dragDistRef.current < DRAG_THRESHOLD) setSelected((prev) => (prev === id ? null : id)); }}
-              onDrag={handleDragStart}
+              onDrag={onNodeDrag}
               isDragging={draggingId === agent.id}
             />
           ) : null
         )}
       </div>
 
-      {/* Header */}
       <div style={{ position: 'absolute', top: 28, left: 36, zIndex: 10, animation: 'fadeUp 0.5s both', pointerEvents: 'auto' }}>
         {onClose && (
           <button
@@ -833,9 +639,9 @@ export default function OrchestrationGraph({ orchestration, projectName, project
               display: 'inline-flex',
               alignItems: 'center',
               gap: '6px',
-              fontFamily: "'Space Grotesk', sans-serif",
+              fontFamily: "'Geist', ui-sans-serif, system-ui, sans-serif",
               fontSize: '12px',
-              color: C.textDim,
+              color: GC.textDim,
               background: 'none',
               border: 'none',
               cursor: 'pointer',
@@ -851,19 +657,19 @@ export default function OrchestrationGraph({ orchestration, projectName, project
         )}
         <div
           style={{
-            fontFamily: "'Space Grotesk', sans-serif",
+            fontFamily: "'Geist', ui-sans-serif, system-ui, sans-serif",
             fontSize: '15px',
             fontWeight: 600,
-            color: C.textPrimary,
+            color: GC.textPrimary,
           }}
         >
           {orchestration.name || projectName}
         </div>
         <div
           style={{
-            fontFamily: "'JetBrains Mono', monospace",
+            fontFamily: "'Geist Mono', ui-monospace, SFMono-Regular, monospace",
             fontSize: '11px',
-            color: C.textDim,
+            color: GC.textDim,
             marginTop: '4px',
           }}
         >
@@ -886,7 +692,6 @@ export default function OrchestrationGraph({ orchestration, projectName, project
         </>
       )}
 
-      {/* Hint */}
       <div
         style={{
           position: 'absolute',
@@ -896,20 +701,20 @@ export default function OrchestrationGraph({ orchestration, projectName, project
           display: 'flex',
           alignItems: 'center',
           gap: '8px',
-          fontFamily: "'JetBrains Mono', monospace",
+          fontFamily: "'Geist Mono', ui-monospace, SFMono-Regular, monospace",
           fontSize: '10px',
-          color: C.textDim,
+          color: GC.textDim,
           animation: 'fadeUp 0.5s 0.8s both',
           pointerEvents: 'none',
         }}
       >
-        <span style={{ padding: '2px 6px', borderRadius: '4px', border: `1px solid ${C.border}`, color: C.textSec }}>scroll</span>
+        <span style={{ padding: '2px 6px', borderRadius: '4px', border: `1px solid ${GC.border}`, color: GC.textSec }}>scroll</span>
         to zoom ·
-        <span style={{ padding: '2px 6px', borderRadius: '4px', border: `1px solid ${C.border}`, color: C.textSec }}>drag</span>
+        <span style={{ padding: '2px 6px', borderRadius: '4px', border: `1px solid ${GC.border}`, color: GC.textSec }}>drag</span>
         to pan or rearrange ·
-        <span style={{ padding: '2px 6px', borderRadius: '4px', border: `1px solid ${C.border}`, color: C.textSec }}>click</span>
+        <span style={{ padding: '2px 6px', borderRadius: '4px', border: `1px solid ${GC.border}`, color: GC.textSec }}>click</span>
         to inspect ·
-        <span style={{ padding: '2px 6px', borderRadius: '4px', border: `1px solid ${C.border}`, color: C.textSec }}>esc</span>
+        <span style={{ padding: '2px 6px', borderRadius: '4px', border: `1px solid ${GC.border}`, color: GC.textSec }}>esc</span>
         to go back
       </div>
     </div>

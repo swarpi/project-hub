@@ -90,7 +90,7 @@ export function YamlPreview(): React.ReactElement {
 			>
 				<span
 					style={{
-						fontFamily: "'Space Grotesk', sans-serif",
+						fontFamily: "'Geist', ui-sans-serif, system-ui, sans-serif",
 						fontSize: 11,
 						fontWeight: 600,
 						color: "var(--wf-text-sec)",
@@ -193,7 +193,7 @@ export function YamlPreview(): React.ReactElement {
 					border: "1px solid var(--wf-border)",
 					borderRadius: 8,
 					overflow: "auto",
-					fontFamily: "'JetBrains Mono', monospace",
+					fontFamily: "'Geist Mono', ui-monospace, SFMono-Regular, monospace",
 					fontSize: 11,
 					lineHeight: 1.6,
 					color: "var(--wf-text)",

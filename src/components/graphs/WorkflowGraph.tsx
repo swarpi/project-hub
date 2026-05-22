@@ -1,4 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
+import type { Position, Positions } from './graph-utils';
+import { DotGrid } from './DotGrid';
 
 const C = {
   indigo: 'oklch(0.45 0.18 265)',
@@ -114,36 +116,6 @@ const NODES: NodeData[] = [
 const NODE_W = 240;
 const NODE_H = 170;
 
-interface Position {
-  x: number;
-  y: number;
-}
-
-interface Positions {
-  [key: string]: Position;
-}
-
-function DotGrid({ W, H }: { W: number; H: number }) {
-  const gap = 32;
-  const cols = Math.ceil(W / gap) + 1;
-  const rows = Math.ceil(H / gap) + 1;
-  const pts: [number, number][] = [];
-  for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) pts.push([c * gap, r * gap]);
-
-  return (
-    <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none' }}>
-      <defs>
-        <radialGradient id="dgFade" cx="50%" cy="50%" r="55%">
-          <stop offset="0%" stopColor="oklch(0.72 0.04 265)" stopOpacity="0.5" />
-          <stop offset="100%" stopColor="oklch(0.72 0.04 265)" stopOpacity="0.04" />
-        </radialGradient>
-      </defs>
-      {pts.map(([x, y], i) => (
-        <circle key={i} cx={x} cy={y} r="1.1" fill="url(#dgFade)" />
-      ))}
-    </svg>
-  );
-}
 
 function ConnectionLayer({ positions }: { positions: Positions }) {
   if (!positions.architect) return null;
@@ -271,7 +243,7 @@ function ConnectionLayer({ positions }: { positions: Positions }) {
         <foreignObject key={`f${i}`} x={l.mid.x - 56} y={l.mid.y - 13} width="112" height="26">
           <div
             style={{
-              fontFamily: "'JetBrains Mono', monospace",
+              fontFamily: "'Geist Mono', ui-monospace, SFMono-Regular, monospace",
               fontSize: '9.5px',
               lineHeight: 1,
               padding: '4px 9px',
@@ -362,7 +334,7 @@ function NodeCard({
             style={{
               display: 'inline-flex',
               alignItems: 'center',
-              fontFamily: "'JetBrains Mono', monospace",
+              fontFamily: "'Geist Mono', ui-monospace, SFMono-Regular, monospace",
               fontSize: '10px',
               fontWeight: 500,
               color: node.color,
@@ -379,7 +351,7 @@ function NodeCard({
         <div>
           <div
             style={{
-              fontFamily: "'Space Grotesk', sans-serif",
+              fontFamily: "'Geist', ui-sans-serif, system-ui, sans-serif",
               fontSize: '20px',
               fontWeight: 700,
               lineHeight: 1.1,
@@ -391,7 +363,7 @@ function NodeCard({
           </div>
           <div
             style={{
-              fontFamily: "'Space Grotesk', sans-serif",
+              fontFamily: "'Geist', ui-sans-serif, system-ui, sans-serif",
               fontSize: '12px',
               lineHeight: 1.5,
               color: C.textDim,
@@ -405,7 +377,7 @@ function NodeCard({
             <span
               key={o}
               style={{
-                fontFamily: "'JetBrains Mono', monospace",
+                fontFamily: "'Geist Mono', ui-monospace, SFMono-Regular, monospace",
                 fontSize: '9.5px',
                 padding: '2px 8px',
                 borderRadius: '20px',
@@ -464,7 +436,7 @@ function DetailPanel({ node, onClose, positions }: { node: NodeData; onClose: ()
           justifyContent: 'center',
           color: C.textDim,
           fontSize: '13px',
-          fontFamily: "'Space Grotesk', sans-serif",
+          fontFamily: "'Geist', ui-sans-serif, system-ui, sans-serif",
         }}
       >
         ✕
@@ -475,7 +447,7 @@ function DetailPanel({ node, onClose, positions }: { node: NodeData; onClose: ()
           display: 'inline-flex',
           alignItems: 'center',
           gap: '6px',
-          fontFamily: "'JetBrains Mono', monospace",
+          fontFamily: "'Geist Mono', ui-monospace, SFMono-Regular, monospace",
           fontSize: '9.5px',
           color: node.color,
           marginBottom: '12px',
@@ -491,7 +463,7 @@ function DetailPanel({ node, onClose, positions }: { node: NodeData; onClose: ()
 
       <div
         style={{
-          fontFamily: "'Space Grotesk', sans-serif",
+          fontFamily: "'Geist', ui-sans-serif, system-ui, sans-serif",
           fontSize: '22px',
           fontWeight: 700,
           color: C.textPrimary,
@@ -504,7 +476,7 @@ function DetailPanel({ node, onClose, positions }: { node: NodeData; onClose: ()
 
       <div
         style={{
-          fontFamily: "'Space Grotesk', sans-serif",
+          fontFamily: "'Geist', ui-sans-serif, system-ui, sans-serif",
           fontSize: '13px',
           lineHeight: 1.7,
           color: C.textSec,
@@ -516,7 +488,7 @@ function DetailPanel({ node, onClose, positions }: { node: NodeData; onClose: ()
 
       <div
         style={{
-          fontFamily: "'JetBrains Mono', monospace",
+          fontFamily: "'Geist Mono', ui-monospace, SFMono-Regular, monospace",
           fontSize: '9px',
           letterSpacing: '0.12em',
           textTransform: 'uppercase',
@@ -531,7 +503,7 @@ function DetailPanel({ node, onClose, positions }: { node: NodeData; onClose: ()
           <span
             key={o}
             style={{
-              fontFamily: "'JetBrains Mono', monospace",
+              fontFamily: "'Geist Mono', ui-monospace, SFMono-Regular, monospace",
               fontSize: '10.5px',
               padding: '4px 10px',
               borderRadius: '8px',
@@ -554,7 +526,7 @@ function DetailPanel({ node, onClose, positions }: { node: NodeData; onClose: ()
             display: 'flex',
             alignItems: 'center',
             gap: '6px',
-            fontFamily: "'Space Grotesk', sans-serif",
+            fontFamily: "'Geist', ui-sans-serif, system-ui, sans-serif",
             fontSize: '13px',
             fontWeight: 600,
             color: node.color,
@@ -594,7 +566,7 @@ function Header() {
           display: 'flex',
           alignItems: 'center',
           gap: '10px',
-          fontFamily: "'Space Grotesk', sans-serif",
+          fontFamily: "'Geist', ui-sans-serif, system-ui, sans-serif",
           fontSize: '14px',
           fontWeight: 600,
           color: C.textPrimary,
@@ -609,7 +581,7 @@ function Header() {
       </div>
       <div
         style={{
-          fontFamily: "'JetBrains Mono', monospace",
+          fontFamily: "'Geist Mono', ui-monospace, SFMono-Regular, monospace",
           fontSize: '11px',
           color: C.textDim,
           marginTop: '4px',
@@ -633,7 +605,7 @@ function Hint() {
         display: 'flex',
         alignItems: 'center',
         gap: '8px',
-        fontFamily: "'JetBrains Mono', monospace",
+        fontFamily: "'Geist Mono', ui-monospace, SFMono-Regular, monospace",
         fontSize: '10.5px',
         color: C.textDim,
         animation: 'fadeUp 0.5s 1s both',
@@ -698,8 +670,6 @@ export default function WorkflowGraph() {
       }}
     >
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500&display=swap');
-
         @keyframes fadeUp {
           from { opacity: 0; transform: translateY(8px); }
           to { opacity: 1; transform: translateY(0); }

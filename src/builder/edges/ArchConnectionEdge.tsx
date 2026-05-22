@@ -71,7 +71,7 @@ function EdgeTooltipContent({
 			<div style={{
 				display: "flex", alignItems: "center", gap: 6,
 				fontSize: 10, color: "var(--wf-text-sec)",
-				fontFamily: "'Space Grotesk', sans-serif",
+				fontFamily: "'Geist', ui-sans-serif, system-ui, sans-serif",
 			}}>
 				<span style={{ color: color.main, fontWeight: 600 }}>{sourceName}</span>
 				<svg width="14" height="10" viewBox="0 0 24 10" fill="none" stroke={color.main} strokeWidth="2" strokeLinecap="round">
@@ -258,7 +258,7 @@ export function ArchConnectionEdge({
 							position: "absolute",
 							transform: `translate(-50%, -50%) translate(${labelX}px, ${labelY}px)`,
 							pointerEvents: "all",
-							fontFamily: "'JetBrains Mono', monospace",
+							fontFamily: "'Geist Mono', ui-monospace, SFMono-Regular, monospace",
 							fontSize: "6.5px",
 							lineHeight: 1,
 							padding: "2px 5px",

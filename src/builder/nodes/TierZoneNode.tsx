@@ -56,7 +56,7 @@ export function TierZoneNode({
 					<TierIcon tier={zone.id} size={16} color={color.main} />
 					<span
 						style={{
-							fontFamily: "'Space Grotesk', sans-serif",
+							fontFamily: "'Geist', ui-sans-serif, system-ui, sans-serif",
 							fontSize: 12,
 							fontWeight: 600,
 							letterSpacing: 0.5,
