@@ -1,4 +1,4 @@
-import { useMemo, useCallback, useState, type CSSProperties } from "react";
+import { useMemo, useCallback, useState, useEffect, type CSSProperties } from "react";
 import {
 	ReactFlow,
 	Background,
@@ -24,6 +24,7 @@ import type {
 import type { ArchComponent, Zone } from "@/lib/types";
 import "@xyflow/react/dist/style.css";
 import { useBuilderStore } from "../store/builder-store";
+import { useShallow } from "zustand/react/shallow";
 import { ArchComponentNode } from "../nodes/ArchComponentNode";
 import type { ArchComponentNodeType } from "../nodes/ArchComponentNode";
 import { ArchConnectionEdge } from "../edges/ArchConnectionEdge";
@@ -46,7 +47,7 @@ const EMPTY_OVERLAY: CSSProperties = {
 };
 
 const EMPTY_TEXT: CSSProperties = {
-	fontFamily: "'Space Grotesk', sans-serif",
+	fontFamily: "'Geist', ui-sans-serif, system-ui, sans-serif",
 	fontSize: 13,
 	color: "var(--wf-text-dim)",
 	textAlign: "center",
@@ -84,26 +85,31 @@ function pickHandles(
 }
 
 export function Canvas(): React.ReactElement {
-	const zones = useBuilderStore((s) => s.zones);
-	const updateZone = useBuilderStore((s) => s.updateZone);
-	const removeZone = useBuilderStore((s) => s.removeZone);
-	const components = useBuilderStore((s) => s.components);
-	const positions = useBuilderStore((s) => s.positions);
-	const connections = useBuilderStore((s) => s.connections);
-	const selectedNodeId = useBuilderStore((s) => s.selectedNodeId);
-	const selectedEdgeId = useBuilderStore((s) => s.selectedEdgeId);
-	const snapToGrid = useBuilderStore((s) => s.snapToGrid);
-	const gridSize = useBuilderStore((s) => s.gridSize);
-	const addComponentAtPosition = useBuilderStore(
-		(s) => s.addComponentAtPosition,
-	);
-	const addConnection = useBuilderStore((s) => s.addConnection);
-	const removeComponent = useBuilderStore((s) => s.removeComponent);
-	const removeConnection = useBuilderStore((s) => s.removeConnection);
-	const updatePositions = useBuilderStore((s) => s.updatePositions);
-	const selectNode = useBuilderStore((s) => s.selectNode);
-	const selectEdge = useBuilderStore((s) => s.selectEdge);
-	const clearSelection = useBuilderStore((s) => s.clearSelection);
+	const { zones, components, positions, connections, selectedNodeId, selectedEdgeId, snapToGrid, gridSize } =
+		useBuilderStore(useShallow((s) => ({
+			zones: s.zones,
+			components: s.components,
+			positions: s.positions,
+			connections: s.connections,
+			selectedNodeId: s.selectedNodeId,
+			selectedEdgeId: s.selectedEdgeId,
+			snapToGrid: s.snapToGrid,
+			gridSize: s.gridSize,
+		})));
+
+	const { addComponentAtPosition, addConnection, removeComponent, removeConnection, updatePositions, selectNode, selectEdge, clearSelection, updateZone, removeZone } =
+		useBuilderStore(useShallow((s) => ({
+			addComponentAtPosition: s.addComponentAtPosition,
+			addConnection: s.addConnection,
+			removeComponent: s.removeComponent,
+			removeConnection: s.removeConnection,
+			updatePositions: s.updatePositions,
+			selectNode: s.selectNode,
+			selectEdge: s.selectEdge,
+			clearSelection: s.clearSelection,
+			updateZone: s.updateZone,
+			removeZone: s.removeZone,
+		})));
 	const reactFlow = useReactFlow();
 
 	const zoneNodes = useMemo<TierZoneNodeType[]>(
@@ -176,11 +182,14 @@ export function Canvas(): React.ReactElement {
 		[components, positions, selectedNodeId, zones],
 	);
 
+	const compMap = useMemo(() => new Map(components.map((c) => [c.id, c])), [components]);
+	const zoneMap = useMemo(() => new Map(zones.map((z) => [z.id, z])), [zones]);
+
 	const storeEdges = useMemo<ArchConnectionEdgeType[]>(
 		() =>
 			connections.map((conn) => {
-				const sourceComp = components.find((c) => c.id === conn.from);
-				const targetComp = components.find((c) => c.id === conn.to);
+				const sourceComp = compMap.get(conn.from);
+				const targetComp = compMap.get(conn.to);
 				const sourceColor = (sourceComp?.color ?? "indigo") as ColorKey;
 				const edgeId = `${conn.from}->${conn.to}`;
 
@@ -189,8 +198,8 @@ export function Canvas(): React.ReactElement {
 				let handles = { sourceHandle: "bottom-src", targetHandle: "top-tgt" };
 
 				if (sourcePos && targetPos) {
-					const sourceZone = zones.find((z) => z.id === sourceComp?.tier)?.position ?? { x: 0, y: 0 };
-					const targetZone = zones.find((z) => z.id === targetComp?.tier)?.position ?? { x: 0, y: 0 };
+					const sourceZone = zoneMap.get(sourceComp?.tier ?? "")?.position ?? { x: 0, y: 0 };
+					const targetZone = zoneMap.get(targetComp?.tier ?? "")?.position ?? { x: 0, y: 0 };
 					handles = pickHandles(
 						{ x: sourcePos.x + sourceZone.x, y: sourcePos.y + sourceZone.y },
 						{ x: targetPos.x + targetZone.x, y: targetPos.y + targetZone.y },
@@ -219,7 +228,7 @@ export function Canvas(): React.ReactElement {
 					},
 				};
 			}),
-		[connections, components, selectedEdgeId, positions, zones],
+		[connections, compMap, selectedEdgeId, positions, zoneMap],
 	);
 
 	const combinedNodes = useMemo<CanvasNodeType[]>(
@@ -228,20 +237,10 @@ export function Canvas(): React.ReactElement {
 	);
 
 	const [nodes, setNodes] = useState<CanvasNodeType[]>(combinedNodes);
-	const [prevCombinedNodes, setPrevCombinedNodes] = useState(combinedNodes);
-
-	if (prevCombinedNodes !== combinedNodes) {
-		setPrevCombinedNodes(combinedNodes);
-		setNodes(combinedNodes);
-	}
+	useEffect(() => { setNodes(combinedNodes); }, [combinedNodes]);
 
 	const [edges, setEdges] = useState(storeEdges);
-	const [prevStoreEdges, setPrevStoreEdges] = useState(storeEdges);
-
-	if (prevStoreEdges !== storeEdges) {
-		setPrevStoreEdges(storeEdges);
-		setEdges(storeEdges);
-	}
+	useEffect(() => { setEdges(storeEdges); }, [storeEdges]);
 
 	const onNodesChange: OnNodesChange<CanvasNodeType> = useCallback(
 		(changes: NodeChange<CanvasNodeType>[]) => {

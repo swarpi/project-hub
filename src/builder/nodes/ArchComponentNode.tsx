@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { Handle, Position } from "@xyflow/react";
 import type { Node, NodeProps } from "@xyflow/react";
 import type { ArchComponent } from "@/lib/types";
@@ -44,7 +45,7 @@ function NodeTooltipContent({ data }: { data: ArchComponent }) {
 					<div style={TT_HEADING}>{data.title}</div>
 					{data.technology && (
 						<div style={{
-							fontFamily: "'JetBrains Mono', monospace",
+							fontFamily: "'Geist Mono', ui-monospace, SFMono-Regular, monospace",
 							fontSize: 10, color: color.main, marginTop: 1,
 						}}>
 							{data.technology}
@@ -86,7 +87,7 @@ function NodeTooltipContent({ data }: { data: ArchComponent }) {
 							<div key={`${conn.from}->${conn.to}`} style={{
 								display: "flex", alignItems: "center", gap: 6,
 								fontSize: 10, color: "var(--wf-text-sec)",
-								fontFamily: "'Space Grotesk', sans-serif",
+								fontFamily: "'Geist', ui-sans-serif, system-ui, sans-serif",
 							}}>
 								<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke={color.main} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
 									<line x1="5" y1="12" x2="19" y2="12" /><polyline points="12 5 19 12 12 19" />
@@ -94,7 +95,7 @@ function NodeTooltipContent({ data }: { data: ArchComponent }) {
 								<span>{resolveTitle(conn.to)}</span>
 								{conn.protocol && (
 									<span style={{
-										fontFamily: "'JetBrains Mono', monospace",
+										fontFamily: "'Geist Mono', ui-monospace, SFMono-Regular, monospace",
 										fontSize: 8, padding: "1px 4px",
 										borderRadius: 3,
 										background: "var(--wf-bg)",
@@ -110,7 +111,7 @@ function NodeTooltipContent({ data }: { data: ArchComponent }) {
 							<div key={`${conn.from}->${conn.to}`} style={{
 								display: "flex", alignItems: "center", gap: 6,
 								fontSize: 10, color: "var(--wf-text-sec)",
-								fontFamily: "'Space Grotesk', sans-serif",
+								fontFamily: "'Geist', ui-sans-serif, system-ui, sans-serif",
 							}}>
 								<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="var(--wf-text-dim)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
 									<line x1="19" y1="12" x2="5" y2="12" /><polyline points="12 19 5 12 12 5" />
@@ -118,7 +119,7 @@ function NodeTooltipContent({ data }: { data: ArchComponent }) {
 								<span>{resolveTitle(conn.from)}</span>
 								{conn.protocol && (
 									<span style={{
-										fontFamily: "'JetBrains Mono', monospace",
+										fontFamily: "'Geist Mono', ui-monospace, SFMono-Regular, monospace",
 										fontSize: 8, padding: "1px 4px",
 										borderRadius: 3,
 										background: "var(--wf-bg)",
@@ -142,7 +143,7 @@ function NodeTooltipContent({ data }: { data: ArchComponent }) {
 						{data.subcomponents.map((sub) => (
 							<div key={sub.name} style={{ display: "flex", flexDirection: "column", gap: 1 }}>
 								<span style={{
-									fontFamily: "'JetBrains Mono', monospace",
+									fontFamily: "'Geist Mono', ui-monospace, SFMono-Regular, monospace",
 									fontSize: 10, fontWeight: 600,
 									color: color.main,
 								}}>
@@ -166,7 +167,7 @@ function SubcomponentTooltip({ name, detail, color }: { name: string; detail: st
 	return (
 		<div>
 			<div style={{
-				fontFamily: "'JetBrains Mono', monospace",
+				fontFamily: "'Geist Mono', ui-monospace, SFMono-Regular, monospace",
 				fontSize: 11, fontWeight: 600, color,
 			}}>
 				{name}
@@ -178,7 +179,7 @@ function SubcomponentTooltip({ name, detail, color }: { name: string; detail: st
 	);
 }
 
-export function ArchComponentNode({
+export const ArchComponentNode = memo(function ArchComponentNode({
 	data,
 	selected,
 }: NodeProps<ArchComponentNodeType>): React.ReactElement {
@@ -266,7 +267,7 @@ export function ArchComponentNode({
 								>
 									<span
 										style={{
-											fontFamily: "'JetBrains Mono', monospace",
+											fontFamily: "'Geist Mono', ui-monospace, SFMono-Regular, monospace",
 											fontSize: "8px",
 											fontWeight: 500,
 											borderRadius: "4px",
@@ -278,7 +279,7 @@ export function ArchComponentNode({
 									</span>
 									<span
 										style={{
-											fontFamily: "'JetBrains Mono', monospace",
+											fontFamily: "'Geist Mono', ui-monospace, SFMono-Regular, monospace",
 											fontSize: "7px",
 											color: "var(--wf-text-dim)",
 											maxWidth: "90px",
@@ -293,7 +294,7 @@ export function ArchComponentNode({
 
 								<div
 									style={{
-										fontFamily: "'Space Grotesk', sans-serif",
+										fontFamily: "'Geist', ui-sans-serif, system-ui, sans-serif",
 										fontSize: "13px",
 										fontWeight: 700,
 										color: "var(--wf-text)",
@@ -308,7 +309,7 @@ export function ArchComponentNode({
 						{data.description && (
 							<div
 								style={{
-									fontFamily: "'Space Grotesk', sans-serif",
+									fontFamily: "'Geist', ui-sans-serif, system-ui, sans-serif",
 									fontSize: "11px",
 									color: "var(--wf-text-sec)",
 									lineHeight: 1.4,
@@ -344,7 +345,7 @@ export function ArchComponentNode({
 												onMouseEnter={onMouseEnter}
 												onMouseLeave={onMouseLeave}
 												style={{
-													fontFamily: "'JetBrains Mono', monospace",
+													fontFamily: "'Geist Mono', ui-monospace, SFMono-Regular, monospace",
 													fontSize: "7.5px",
 													padding: "1px 5px",
 													borderRadius: "8px",
@@ -367,7 +368,7 @@ export function ArchComponentNode({
 												{data.subcomponents.slice(2).map((sub) => (
 													<div key={sub.name}>
 														<span style={{
-															fontFamily: "'JetBrains Mono', monospace",
+															fontFamily: "'Geist Mono', ui-monospace, SFMono-Regular, monospace",
 															fontSize: 10, fontWeight: 600, color: color.main,
 														}}>
 															{sub.name}
@@ -388,7 +389,7 @@ export function ArchComponentNode({
 												onMouseEnter={onMouseEnter}
 												onMouseLeave={onMouseLeave}
 												style={{
-													fontFamily: "'JetBrains Mono', monospace",
+													fontFamily: "'Geist Mono', ui-monospace, SFMono-Regular, monospace",
 													fontSize: "7.5px",
 													padding: "1px 5px",
 													borderRadius: "8px",
@@ -410,4 +411,4 @@ export function ArchComponentNode({
 			</Tooltip>
 		</div>
 	);
-}
+});

@@ -2,6 +2,7 @@ import { useState, useCallback, useRef, useEffect } from "react";
 import { useStore } from "zustand";
 import { useReactFlow } from "@xyflow/react";
 import { useBuilderStore } from "../store/builder-store";
+import { useShallow } from "zustand/react/shallow";
 import { diagramToYaml, downloadYaml } from "../lib/yaml-export";
 import { yamlToDiagram } from "../lib/yaml-import";
 import { computeTierLayout } from "../lib/layout";
@@ -12,7 +13,7 @@ const BTN: React.CSSProperties = {
 	gap: 5,
 	padding: "4px 10px",
 	borderRadius: 6,
-	fontFamily: "'JetBrains Mono', monospace",
+	fontFamily: "'Geist Mono', ui-monospace, SFMono-Regular, monospace",
 	fontSize: 10,
 	cursor: "pointer",
 	border: "1px solid var(--wf-border)",
@@ -35,7 +36,7 @@ const DIVIDER: React.CSSProperties = {
 };
 
 const LABEL: React.CSSProperties = {
-	fontFamily: "'Space Grotesk', sans-serif",
+	fontFamily: "'Geist', ui-sans-serif, system-ui, sans-serif",
 	fontSize: 11,
 	fontWeight: 600,
 	color: "var(--wf-text-sec)",
@@ -57,8 +58,10 @@ function ImportModal({
 	onClose: () => void;
 }) {
 	const dialogRef = useRef<HTMLDialogElement>(null);
-	const loadDiagram = useBuilderStore((s) => s.loadDiagram);
-	const zones = useBuilderStore((s) => s.zones);
+	const { loadDiagram, zones } = useBuilderStore(useShallow((s) => ({
+		loadDiagram: s.loadDiagram,
+		zones: s.zones,
+	})));
 	const reactFlow = useReactFlow();
 	const [tab, setTab] = useState<"upload" | "paste">("upload");
 	const [pasteValue, setPasteValue] = useState("");
@@ -134,7 +137,7 @@ function ImportModal({
 				maxHeight: "80vh",
 				overflow: "auto",
 				color: "var(--wf-text)",
-				fontFamily: "'Space Grotesk', sans-serif",
+				fontFamily: "'Geist', ui-sans-serif, system-ui, sans-serif",
 				boxShadow: "0 8px 32px oklch(0 0 0 / 0.2)",
 			}}
 		>
@@ -187,7 +190,7 @@ function ImportModal({
 						accept=".yaml,.yml"
 						onChange={onFileChange}
 						style={{
-							fontFamily: "'Space Grotesk', sans-serif",
+							fontFamily: "'Geist', ui-sans-serif, system-ui, sans-serif",
 							fontSize: 12,
 							color: "var(--wf-text)",
 						}}
@@ -207,7 +210,7 @@ function ImportModal({
 							border: "1px solid var(--wf-border)",
 							borderRadius: 6,
 							padding: "8px 10px",
-							fontFamily: "'JetBrains Mono', monospace",
+							fontFamily: "'Geist Mono', ui-monospace, SFMono-Regular, monospace",
 							fontSize: 11,
 							color: "var(--wf-text)",
 							resize: "vertical",
@@ -276,13 +279,16 @@ function SettingsModal({
 	onClose: () => void;
 }) {
 	const dialogRef = useRef<HTMLDialogElement>(null);
-	const apiKey = useBuilderStore((s) => s.apiKey);
-	const aiBaseUrl = useBuilderStore((s) => s.aiBaseUrl);
-	const snapToGrid = useBuilderStore((s) => s.snapToGrid);
-	const gridSize = useBuilderStore((s) => s.gridSize);
-	const setApiKey = useBuilderStore((s) => s.setApiKey);
-	const setAiBaseUrl = useBuilderStore((s) => s.setAiBaseUrl);
-	const setSnapToGrid = useBuilderStore((s) => s.setSnapToGrid);
+	const { apiKey, aiBaseUrl, snapToGrid, gridSize, setApiKey, setAiBaseUrl, setSnapToGrid } =
+		useBuilderStore(useShallow((s) => ({
+			apiKey: s.apiKey,
+			aiBaseUrl: s.aiBaseUrl,
+			snapToGrid: s.snapToGrid,
+			gridSize: s.gridSize,
+			setApiKey: s.setApiKey,
+			setAiBaseUrl: s.setAiBaseUrl,
+			setSnapToGrid: s.setSnapToGrid,
+		})));
 	const [showKey, setShowKey] = useState(false);
 
 	useEffect(() => {
@@ -302,14 +308,14 @@ function SettingsModal({
 		border: "1px solid var(--wf-border)",
 		borderRadius: 6,
 		padding: "6px 10px",
-		fontFamily: "'JetBrains Mono', monospace",
+		fontFamily: "'Geist Mono', ui-monospace, SFMono-Regular, monospace",
 		fontSize: 11,
 		color: "var(--wf-text)",
 		outline: "none",
 	};
 
 	const fieldLabel: React.CSSProperties = {
-		fontFamily: "'Space Grotesk', sans-serif",
+		fontFamily: "'Geist', ui-sans-serif, system-ui, sans-serif",
 		fontSize: 11,
 		fontWeight: 500,
 		color: "var(--wf-text-sec)",
@@ -330,7 +336,7 @@ function SettingsModal({
 				maxHeight: "80vh",
 				overflow: "auto",
 				color: "var(--wf-text)",
-				fontFamily: "'Space Grotesk', sans-serif",
+				fontFamily: "'Geist', ui-sans-serif, system-ui, sans-serif",
 				boxShadow: "0 8px 32px oklch(0 0 0 / 0.2)",
 			}}
 		>
@@ -401,7 +407,7 @@ function SettingsModal({
 						placeholder="http://localhost:3456"
 						style={inputStyle}
 					/>
-					<span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 9, color: "var(--wf-text-dim)", marginTop: 2, display: "block" }}>
+					<span style={{ fontFamily: "'Geist Mono', ui-monospace, SFMono-Regular, monospace", fontSize: 9, color: "var(--wf-text-dim)", marginTop: 2, display: "block" }}>
 						Local proxy: http://localhost:3456
 					</span>
 				</div>
@@ -474,19 +480,26 @@ function SettingsModal({
 // --- Toolbar ---
 
 export function Toolbar() {
-	const name = useBuilderStore((s) => s.name);
-	const description = useBuilderStore((s) => s.description);
-	const components = useBuilderStore((s) => s.components);
-	const connections = useBuilderStore((s) => s.connections);
-	const positions = useBuilderStore((s) => s.positions);
-	const selectedNodeId = useBuilderStore((s) => s.selectedNodeId);
-	const selectedEdgeId = useBuilderStore((s) => s.selectedEdgeId);
-	const removeComponent = useBuilderStore((s) => s.removeComponent);
-	const removeConnection = useBuilderStore((s) => s.removeConnection);
-	const clearSelection = useBuilderStore((s) => s.clearSelection);
-	const updatePositions = useBuilderStore((s) => s.updatePositions);
-	const updateZone = useBuilderStore((s) => s.updateZone);
-	const zones = useBuilderStore((s) => s.zones);
+	const { name, description, components, connections, positions, selectedNodeId, selectedEdgeId, zones } =
+		useBuilderStore(useShallow((s) => ({
+			name: s.name,
+			description: s.description,
+			components: s.components,
+			connections: s.connections,
+			positions: s.positions,
+			selectedNodeId: s.selectedNodeId,
+			selectedEdgeId: s.selectedEdgeId,
+			zones: s.zones,
+		})));
+
+	const { removeComponent, removeConnection, clearSelection, updatePositions, updateZone } =
+		useBuilderStore(useShallow((s) => ({
+			removeComponent: s.removeComponent,
+			removeConnection: s.removeConnection,
+			clearSelection: s.clearSelection,
+			updatePositions: s.updatePositions,
+			updateZone: s.updateZone,
+		})));
 
 	const canUndo = useStore(
 		useBuilderStore.temporal,
@@ -757,7 +770,7 @@ export function Toolbar() {
 				{/* Diagram name + unsaved indicator */}
 				<span
 					style={{
-						fontFamily: "'Space Grotesk', sans-serif",
+						fontFamily: "'Geist', ui-sans-serif, system-ui, sans-serif",
 						fontSize: 11,
 						color: "var(--wf-text-sec)",
 						marginRight: 8,
@@ -780,7 +793,7 @@ export function Toolbar() {
 					onClick={() => setShortcutsOpen(!shortcutsOpen)}
 					style={{
 						...ICON_BTN,
-						fontFamily: "'JetBrains Mono', monospace",
+						fontFamily: "'Geist Mono', ui-monospace, SFMono-Regular, monospace",
 						fontSize: 11,
 						fontWeight: 700,
 						padding: "4px 8px",
@@ -821,7 +834,7 @@ export function Toolbar() {
 						padding: "14px 18px",
 						zIndex: 100,
 						boxShadow: "0 8px 24px oklch(0 0 0 / 0.2)",
-						fontFamily: "'Space Grotesk', sans-serif",
+						fontFamily: "'Geist', ui-sans-serif, system-ui, sans-serif",
 						fontSize: 11,
 						color: "var(--wf-text)",
 						display: "flex",
@@ -842,7 +855,7 @@ export function Toolbar() {
 						["Double-click canvas", "Add component"],
 					].map(([key, desc]) => (
 						<div key={key} style={{ display: "flex", justifyContent: "space-between", gap: 24 }}>
-							<span style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 10, color: "var(--wf-text-dim)" }}>{key}</span>
+							<span style={{ fontFamily: "'Geist Mono', ui-monospace, SFMono-Regular, monospace", fontSize: 10, color: "var(--wf-text-dim)" }}>{key}</span>
 							<span>{desc}</span>
 						</div>
 					))}
