@@ -1,80 +1,93 @@
-# Project
+# CLAUDE.md
 
-This project uses a hybrid agentic workflow: specialized agents handle process (decisions, planning, review), and Claude Code's plan mode handles execution.
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Workflow — Hybrid Approach
+## Build & Dev Commands
 
-Agents own the **process** — architecture decisions, work decomposition, quality gates, and maintenance. Claude Code plan mode owns the **execution** — implementing individual tickets efficiently within a single session.
+```bash
+npm run dev          # Start Vite dev server (HMR)
+npm run build        # Prefetch GitHub data + tsc + vite build
+npm run lint         # ESLint
+npm run test         # Vitest (single run)
+npm run test:watch   # Vitest (watch mode)
+npm run preview      # Serve production build locally
+```
+
+`npm run build` runs `npm run prefetch` first (`tsx scripts/prefetch-data.ts`) which fetches live project data from GitHub into `public/data/projects.json`. The dev server works without this step — it falls back to live GitHub API calls.
+
+Path alias: `@` → `./src` (configured in `vite.config.ts` and `tsconfig.app.json`). Base URL: `/project-hub/`.
+
+## Architecture
+
+This is a **React 19 + TypeScript + Vite** single-page app with two views:
+
+### Hub view (`/` route)
+Dashboard that fetches GitHub project data and renders orchestration/architecture graphs. Data flows: `data-loader.ts` → `github.ts` → sections + `GraphModal` (uses ReactFlow for visualization).
+
+### Builder view (`/#/builder` route)
+Interactive architecture diagram editor. This is the primary feature surface.
+
+**Layout**: `BuilderPage.tsx` renders a 3-panel layout:
+- **Left**: `Palette.tsx` (200px) — zone library, drag-to-add components
+- **Center**: `Canvas.tsx` — ReactFlow canvas with custom nodes/edges
+- **Right**: `RightSidebar.tsx` (268px) — tabbed panel (Properties | YAML | AI)
+
+**State**: Zustand store in `builder-store.ts` with three slices:
+- `DiagramSlice` — zones, components, connections, positions
+- `UiSlice` — selection state, active panel (`activePanel: "properties" | "ai" | "yaml"`)
+- `SettingsSlice` — API key, base URL, grid settings
+
+Persisted to localStorage via `zustand/persist`. Undo/redo via `zundo`.
+
+**Node types**: `archComponent` (services/DBs) and `tierZone` (grouping containers). Edge type: `archConnection` with protocol/style metadata.
+
+**AI integration**: `AIPanel.tsx` sends user prompts + current diagram (as YAML) to the Anthropic API via `ai-client.ts`. AI returns YAML blocks which are parsed (`yaml-import.ts`) and applied to the store via `loadDiagram()`. Two modes: freeform and guided (confidence-tracked Q&A).
+
+**Educational layer**: `education.ts` provides static explanations for tiers, protocols, and communication styles. Used by `Tooltip.tsx` (portal-based, render-prop pattern) in node/edge hover tooltips.
+
+**Color system**: 8 colors (indigo, amber, green, blue, rose, teal, purple, slate) with 4 variants each (main, light, dim, border) using oklch — defined in `node-styles.ts`.
+
+## Workflow
+
+This project uses a hybrid agentic workflow: agents own process, plan mode owns execution.
 
 | Phase | How | When |
 |-------|-----|------|
-| **Decide** | `/architect` agent | New feature, significant design choice, unclear requirements |
+| **Decide** | `/architect` agent | New feature, significant design choice |
 | **Map** | `/system-architect` agent | New system or major structural change |
-| **Decompose** | `/planner` agent | ADR/spec ready, work needs to be broken into tickets |
-| **Execute** | Claude Code **plan mode** (`shift+tab`) | Implementing a specific ticket |
-| **Test** | `/qa-tester` agent | Feature implementation complete |
-| **Review** | `/reviewer` agent | Code and tests ready for validation |
-| **Maintain** | `/custodian` agent | After a batch of work, or CLAUDE.md > 200 lines |
-| **Report** | `/summarizer` agent | Sprint or feature complete, stakeholder update needed |
+| **Decompose** | `/planner` agent | ADR ready, needs tickets |
+| **Execute** | Plan mode (`shift+tab`) | Implementing a specific ticket |
+| **Test** | `/qa-tester` agent | Feature complete |
+| **Review** | `/reviewer` agent | Code ready for validation |
+| **Maintain** | `/custodian` agent | After batch of work, or CLAUDE.md > 200 lines |
+| **Report** | `/summarizer` agent | Sprint/feature complete |
 
-### Why hybrid?
+**Before any feature**: check for an ADR in `architecture/decisions/` → if missing, run `/architect` first. Then check for tickets in `tickets/` → if missing, run `/planner`.
 
-- Agents enforce **separation of concerns** — the Architect can't write code, the Reviewer can't fix issues
-- Plan mode provides **speed and context continuity** — it explores, plans, and executes in one session
-- Artifacts (ADRs, tickets, reviews) **persist across sessions** — plan mode's output is code, agents' output is documentation
+**Quick fixes** don't need the full pipeline.
 
-### Choosing the right tool
-
-**Use an agent** when the task produces a persistent artifact (ADR, ticket, review, summary) or when role separation matters (the person deciding shouldn't be the person implementing).
-
-**Use plan mode** when you have a well-scoped ticket with clear acceptance criteria and want to go from plan to working code in one session.
-
-**Quick fixes and bug fixes** don't need the full pipeline — use plan mode directly, or just implement without ceremony. The workflow exists to help, not to slow down trivial changes.
-
-## Before Starting Any Feature
-
-1. Check if an ADR exists in `architecture/decisions/` — if not, run `/architect` first
-2. Check if tickets exist in `tickets/` — if not, run `/planner` first
-3. For each ticket: use plan mode (`shift+tab`) to implement it
-4. After implementation: run `/reviewer` to validate against acceptance criteria
-5. If the ticket touches an existing ADR's scope, verify the decision still holds
-
-## Before Starting Any Ticket (in plan mode)
-
-1. Read the ticket fully, including all linked documents
-2. Read any referenced ADRs in `architecture/decisions/`
-3. Check relevant conventions in `conventions/`
-4. Let plan mode explore and propose the implementation plan
-5. Verify the work end-to-end before marking done
-
-## Sub-Agent Deployment
-
-When work can be parallelized, spin up sub-agents for independent tasks concurrently.
-
-### Model selection
+### Sub-agent model selection
 
 | Complexity | Model | Use when |
 |------------|-------|----------|
-| **Low** | Haiku | File lookups, grep, reading docs, running tests, formatting |
-| **Medium** | Sonnet | Multi-file changes, code review, writing tests |
-| **High** | Opus | Architecture decisions, complex refactors, subtle bugs |
+| Low | Haiku | File lookups, grep, running tests |
+| Medium | Sonnet | Multi-file changes, code review, tests |
+| High | Opus | Architecture decisions, complex refactors |
 
-**Default to Haiku** unless the task requires multi-step reasoning or cross-file understanding.
+Default to Haiku.
 
-## Key Files and Directories
+## Key Directories
 
-- `architecture/decisions/` — Architecture Decision Records (ADRs)
-- `architecture.yaml` — System architecture definition (components, connections, tiers)
-- `orchestration.yaml` — Agent workflow definition (roles, outputs, connections)
+- `architecture/decisions/` — ADRs
+- `tickets/` — Work items by feature folder, `_backlog.md` as sprint board
+- `conventions/` — Language-specific coding standards (check before writing code)
+- `.claude/agents/` — Subagent role definitions
 - `specs/` — Feature specifications
-- `tickets/` — Work items organized by feature folder, with `_backlog.md` as the sprint board
-- `conventions/` — Language and framework coding standards
-- `.claude/agents/` — Subagent definitions for each role
+
+## Styling
+
+All components use inline `CSSProperties` objects — no CSS modules or styled-components. Design tokens live in `src/styles/tokens.css` with `--hub-*` (dashboard) and `--wf-*` (builder) CSS variable prefixes. Font: Geist (sans) and Geist Mono.
 
 ## MCP Servers
 
-- **Context7** — Pulls up-to-date, version-specific documentation from live code libraries. Use `resolve` then `get-library-docs` before writing code that depends on a third-party library.
-
-## Conventions
-
-Check `conventions/` for language-specific standards. Always follow the conventions for the language you're working in.
+- **Context7** — Use `resolve` then `get-library-docs` before writing code that depends on a third-party library.
