@@ -1,6 +1,7 @@
 import yaml from "js-yaml";
 import type { DiagramModel } from "./yaml-export";
-import type { ArchComponent, ArchConnection } from "@/lib/types";
+import type { ArchComponent, ArchConnection, Zone } from "@/lib/types";
+import { ZONE_GAP } from "./zone-layout";
 
 const LEGACY_TIER_MAP: Record<string, string> = {
 	client: "zone-client",
@@ -49,6 +50,27 @@ export function yamlToDiagram(yamlString: string): {
 	}
 
 	const description = typeof doc.description === "string" ? doc.description : "";
+
+	const zones: Zone[] = [];
+	const rawZones = Array.isArray(doc.zones) ? doc.zones : [];
+	let zoneY = 0;
+	for (let i = 0; i < rawZones.length; i++) {
+		const z = rawZones[i] as Record<string, unknown>;
+		if (typeof z !== "object" || z === null) continue;
+		const id = typeof z.id === "string" ? z.id : `zone_${i}`;
+		const zoneName = typeof z.name === "string" ? z.name : id;
+		let color = typeof z.color === "string" ? z.color : "";
+		if (!VALID_COLORS.has(color)) color = "indigo";
+		zones.push({
+			id,
+			name: zoneName,
+			color: color as Zone["color"],
+			position: { x: 0, y: zoneY },
+			width: 1600,
+			height: 260,
+		});
+		zoneY += 260 + ZONE_GAP;
+	}
 
 	const components: ArchComponent[] = [];
 	const rawComps = Array.isArray(doc.components) ? doc.components : [];
@@ -149,5 +171,5 @@ export function yamlToDiagram(yamlString: string): {
 		});
 	}
 
-	return { diagram: { name, description, zones: [], components, connections }, errors };
+	return { diagram: { name, description, zones, components, connections }, errors };
 }
