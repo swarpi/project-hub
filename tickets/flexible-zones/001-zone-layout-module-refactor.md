@@ -1,7 +1,7 @@
 # Ticket: Zone Layout Module Refactor
 
 **Feature:** flexible-zones
-**Status:** Todo
+**Status:** Done
 **Priority:** P0
 **Estimate:** S
 **Related:** ADR-0002

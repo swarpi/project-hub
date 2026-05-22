@@ -1,7 +1,7 @@
 # Ticket: PropertiesPanel — Zone Section and Dynamic Zone Dropdown
 
 **Feature:** flexible-zones
-**Status:** Todo
+**Status:** Done
 **Priority:** P1
 **Estimate:** M
 **Related:** ADR-0002, Section 10

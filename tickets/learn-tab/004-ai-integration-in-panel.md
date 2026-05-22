@@ -1,7 +1,7 @@
 # Ticket: AI Integration — Generate Button, Loading State, Error Handling, and Caching
 
 **Feature:** learn-tab
-**Status:** Todo
+**Status:** Done
 **Priority:** P1
 **Estimate:** M
 **Related:** ADR-0004

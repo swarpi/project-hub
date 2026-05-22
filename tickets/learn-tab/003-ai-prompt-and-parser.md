@@ -1,7 +1,7 @@
 # Ticket: AI System Prompt and Response Parser
 
 **Feature:** learn-tab
-**Status:** Todo
+**Status:** Done
 **Priority:** P1
 **Estimate:** S
 **Related:** ADR-0004

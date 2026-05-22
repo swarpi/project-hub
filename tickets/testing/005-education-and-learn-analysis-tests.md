@@ -1,7 +1,7 @@
 # Ticket: Education and Learn-Analysis Unit Tests
 
 **Feature:** testing
-**Status:** Todo
+**Status:** Done
 **Priority:** P1
 **Estimate:** S
 **Related:** ADR-0005

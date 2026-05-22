@@ -1,7 +1,7 @@
 # Ticket: LearnPanel Static Content — Components and Connections Sections
 
 **Feature:** learn-tab
-**Status:** Todo
+**Status:** Done
 **Priority:** P1
 **Estimate:** M
 **Related:** ADR-0004

@@ -1,7 +1,7 @@
 # Ticket: Palette — Dynamic Zone List and Add Zone
 
 **Feature:** flexible-zones
-**Status:** Todo
+**Status:** Done
 **Priority:** P1
 **Estimate:** S
 **Related:** ADR-0002, Section 9

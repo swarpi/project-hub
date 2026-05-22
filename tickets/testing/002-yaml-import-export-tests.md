@@ -1,7 +1,7 @@
 # Ticket: YAML Import and Export Unit Tests
 
 **Feature:** testing
-**Status:** Todo
+**Status:** Done
 **Priority:** P1
 **Estimate:** M
 **Related:** ADR-0005

@@ -1,7 +1,7 @@
 # Ticket: Test Infrastructure Setup
 
 **Feature:** testing
-**Status:** Todo
+**Status:** Done
 **Priority:** P0
 **Estimate:** M
 **Related:** ADR-0005

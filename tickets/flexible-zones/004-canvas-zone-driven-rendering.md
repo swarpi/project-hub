@@ -1,7 +1,7 @@
 # Ticket: Canvas — Zone-Driven Rendering and Interaction
 
 **Feature:** flexible-zones
-**Status:** Todo
+**Status:** Done
 **Priority:** P1
 **Estimate:** M
 **Related:** ADR-0002, Sections 3, 4, 6

@@ -1,7 +1,7 @@
 # Ticket: Store — Zones Slice and Migration
 
 **Feature:** flexible-zones
-**Status:** Todo
+**Status:** Done
 **Priority:** P0
 **Estimate:** M
 **Related:** ADR-0002, Sections 1, 2, 5, 11, 12

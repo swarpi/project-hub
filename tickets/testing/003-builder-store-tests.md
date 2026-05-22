@@ -1,7 +1,7 @@
 # Ticket: Builder Store Unit Tests
 
 **Feature:** testing
-**Status:** Todo
+**Status:** Done
 **Priority:** P1
 **Estimate:** L
 **Related:** ADR-0005

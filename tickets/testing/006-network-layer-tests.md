@@ -1,7 +1,7 @@
 # Ticket: Network Layer Unit Tests (ai-client, data-loader, github, use-hash-route)
 
 **Feature:** testing
-**Status:** Todo
+**Status:** Done
 **Priority:** P1
 **Estimate:** M
 **Related:** ADR-0005

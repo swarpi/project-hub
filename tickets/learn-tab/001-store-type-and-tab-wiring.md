@@ -1,7 +1,7 @@
 # Ticket: Store Type Expansion and Tab Wiring
 
 **Feature:** learn-tab
-**Status:** Todo
+**Status:** Done
 **Priority:** P1
 **Estimate:** XS
 **Related:** ADR-0004

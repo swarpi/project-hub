@@ -1,7 +1,7 @@
 # Ticket: TierZoneNode — Interactive Zone Node with Resize
 
 **Feature:** flexible-zones
-**Status:** Todo
+**Status:** Done
 **Priority:** P1
 **Estimate:** S
 **Related:** ADR-0002, Sections 3, 7
