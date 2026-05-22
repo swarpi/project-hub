@@ -1,9 +1,11 @@
-import { useState, useCallback, useRef, useEffect, type CSSProperties } from "react";
+import { useState, useCallback, useRef, useEffect, memo, type CSSProperties } from "react";
 import { useBuilderStore } from "../store/builder-store";
 import { diagramToYaml } from "../lib/yaml-export";
 import { yamlToDiagram } from "../lib/yaml-import";
 import { computeTierLayout } from "../lib/layout";
 import { sendMessage, AIClientError } from "@/lib/ai-client";
+
+type AiMode = "freeform" | "guided";
 
 interface ChatMessage {
 	role: "user" | "assistant" | "error";
@@ -72,6 +74,158 @@ function extractYamlBlocks(content: string): string[] {
 	return blocks;
 }
 
+function renderInlineMarkdown(text: string): React.ReactNode[] {
+	const parts: React.ReactNode[] = [];
+	const regex = /(\*\*(.+?)\*\*|\*(.+?)\*|`(.+?)`)/g;
+	let lastIndex = 0;
+	let match: RegExpExecArray | null;
+	let key = 0;
+
+	while ((match = regex.exec(text)) !== null) {
+		if (match.index > lastIndex) {
+			parts.push(text.slice(lastIndex, match.index));
+		}
+		if (match[2]) {
+			parts.push(<strong key={key++}>{match[2]}</strong>);
+		} else if (match[3]) {
+			parts.push(<em key={key++}>{match[3]}</em>);
+		} else if (match[4]) {
+			parts.push(
+				<code key={key++} style={{
+					background: "var(--wf-accent-dim)",
+					padding: "1px 4px",
+					borderRadius: 3,
+					fontSize: "0.9em",
+					fontFamily: "'Geist Mono', ui-monospace, SFMono-Regular, monospace",
+				}}>
+					{match[4]}
+				</code>,
+			);
+		}
+		lastIndex = match.index + match[0].length;
+	}
+	if (lastIndex < text.length) {
+		parts.push(text.slice(lastIndex));
+	}
+	return parts;
+}
+
+function renderMarkdownBlock(text: string): React.ReactElement {
+	const lines = text.split("\n");
+	const elements: React.ReactNode[] = [];
+	let listItems: React.ReactNode[] = [];
+	let listType: "ul" | "ol" | null = null;
+	let key = 0;
+
+	function flushList(): void {
+		if (listItems.length > 0 && listType) {
+			const Tag = listType;
+			elements.push(
+				<Tag key={key++} style={{ margin: "4px 0", paddingLeft: 20 }}>
+					{listItems}
+				</Tag>,
+			);
+			listItems = [];
+			listType = null;
+		}
+	}
+
+	for (const line of lines) {
+		const ulMatch = line.match(/^(\s*[-*+])\s+(.*)/);
+		const olMatch = line.match(/^(\s*\d+)[.)]\s+(.*)/);
+
+		if (ulMatch) {
+			if (listType !== "ul") flushList();
+			listType = "ul";
+			listItems.push(
+				<li key={key++} style={{ marginBottom: 2 }}>
+					{renderInlineMarkdown(ulMatch[2])}
+				</li>,
+			);
+		} else if (olMatch) {
+			if (listType !== "ol") flushList();
+			listType = "ol";
+			listItems.push(
+				<li key={key++} style={{ marginBottom: 2 }}>
+					{renderInlineMarkdown(olMatch[2])}
+				</li>,
+			);
+		} else {
+			flushList();
+			if (line.trim() === "") {
+				elements.push(<br key={key++} />);
+			} else {
+				elements.push(
+					<p key={key++} style={{ margin: "2px 0" }}>
+						{renderInlineMarkdown(line)}
+					</p>,
+				);
+			}
+		}
+	}
+	flushList();
+
+	return <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>{elements}</div>;
+}
+
+function parseConfidence(content: string): number | null {
+	const match = /\[CONFIDENCE:\s*(\d+)%\]/.exec(content);
+	return match ? Math.min(100, Math.max(0, parseInt(match[1], 10))) : null;
+}
+
+function stripConfidenceMarker(content: string): string {
+	return content.replace(/\s*\[CONFIDENCE:\s*\d+%\]\s*/g, "").trim();
+}
+
+function buildGuidedSystemPrompt(yaml: string): string {
+	return `You are an expert software architect conducting a requirements-gathering interview. Your goal is to understand the user's system well enough to generate a complete, tailored architecture diagram.
+
+Your approach:
+- Ask 2-3 focused questions per response. Do not overwhelm the user.
+- Adapt your questions based on what you've already learned. Don't ask irrelevant questions.
+- Acknowledge what the user told you before asking follow-up questions.
+- Cover these areas as relevant: system purpose and domain, user types and scale expectations, data storage needs, real-time vs batch requirements, authentication/authorization, external integrations, deployment model, and technology preferences.
+- Skip areas that are clearly not relevant (e.g., don't ask about real-time for a static site).
+
+Confidence tracking:
+- End EVERY response with a confidence marker: [CONFIDENCE: N%]
+- Start at 10-20% after the user's first description.
+- Increase confidence only when you learn genuinely new, architecturally relevant information.
+- Do not increase by more than 25 percentage points per exchange.
+- At 95% or above, you MUST include a complete architecture diagram as a YAML block.
+
+When generating a YAML diagram (at 95%+ confidence or when the user asks you to generate early), use this exact schema:
+
+\`\`\`
+name: <diagram name>
+description: <brief description>
+zones:
+  - id: <zone-kebab-id>
+    name: <display name>
+    color: <indigo|amber|green|blue|rose|teal|purple|slate>
+components:
+  - id: <kebab-case-id>
+    title: <display name>
+    description: <what this component does>
+    technology: <e.g. React, Node.js, PostgreSQL>
+    tier: <zone-id from zones list>
+    color: <indigo|amber|green|blue|rose|teal|purple|slate>
+connections:
+  - from: <component-id>
+    to: <component-id>
+    label: <what flows between them>
+    protocol: <e.g. REST, gRPC, WebSocket, SQL>
+    style: <sync|async|stream>
+\`\`\`
+
+Always include a brief explanation before or after the YAML block. List any assumptions you made.
+
+The user's current diagram (may be empty if starting fresh):
+
+\`\`\`yaml
+${yaml}\`\`\``;
+}
+
 export function AIPanel(): React.ReactElement {
 	const apiKey = useBuilderStore((s) => s.apiKey);
 	const aiBaseUrl = useBuilderStore((s) => s.aiBaseUrl);
@@ -83,16 +237,28 @@ export function AIPanel(): React.ReactElement {
 	const loadDiagram = useBuilderStore((s) => s.loadDiagram);
 	const zones = useBuilderStore((s) => s.zones);
 
-	const [messages, setMessages] = useState<ChatMessage[]>([]);
+	const [mode, setMode] = useState<AiMode>("freeform");
+	const [freeformMessages, setFreeformMessages] = useState<ChatMessage[]>([]);
+	const [guidedMessages, setGuidedMessages] = useState<ChatMessage[]>([]);
+	const [confidence, setConfidence] = useState(0);
+	const [hintDismissed, setHintDismissed] = useState(false);
 	const [input, setInput] = useState("");
 	const [loading, setLoading] = useState(false);
 	const [appliedBlocks, setAppliedBlocks] = useState<Set<string>>(new Set());
 	const threadRef = useRef<HTMLDivElement>(null);
+	const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+	const messages = mode === "guided" ? guidedMessages : freeformMessages;
+	const setMessages = mode === "guided" ? setGuidedMessages : setFreeformMessages;
+	const hasComponents = components.length > 0;
+	const showHint = !hintDismissed && !hasComponents && mode === "freeform" && freeformMessages.length === 0;
 
 	useEffect(() => {
-		if (threadRef.current) {
-			threadRef.current.scrollTop = threadRef.current.scrollHeight;
-		}
+		requestAnimationFrame(() => {
+			if (threadRef.current) {
+				threadRef.current.scrollTop = threadRef.current.scrollHeight;
+			}
+		});
 	}, [messages, loading]);
 
 	const send = useCallback(
@@ -103,6 +269,9 @@ export function AIPanel(): React.ReactElement {
 
 			try {
 				const yaml = diagramToYaml({ name, description, zones, components, connections });
+				const systemPrompt = mode === "guided"
+					? buildGuidedSystemPrompt(yaml)
+					: buildSystemPrompt(yaml);
 				const apiMessages = [...messages, userMsg]
 					.filter((m) => m.role !== "error")
 					.map((m) => ({
@@ -113,10 +282,15 @@ export function AIPanel(): React.ReactElement {
 				const response = await sendMessage({
 					apiKey: apiKey || "local-proxy",
 					messages: apiMessages,
-					systemPrompt: buildSystemPrompt(yaml),
+					systemPrompt,
 					maxTokens: 4096,
 					baseUrl: aiBaseUrl,
 				});
+
+				if (mode === "guided") {
+					const parsed = parseConfidence(response);
+					if (parsed !== null) setConfidence(parsed);
+				}
 
 				setMessages((prev) => [
 					...prev,
@@ -135,7 +309,7 @@ export function AIPanel(): React.ReactElement {
 				setLoading(false);
 			}
 		},
-		[apiKey, aiBaseUrl, messages, name, description, zones, components, connections],
+		[apiKey, aiBaseUrl, messages, mode, name, description, zones, components, connections, setMessages],
 	);
 
 	const applyYaml = useCallback(
@@ -148,8 +322,9 @@ export function AIPanel(): React.ReactElement {
 				]);
 				return;
 			}
-			const layoutResult = computeTierLayout(diagram.components, zones);
-			loadDiagram({ ...diagram, positions: layoutResult.components });
+			const diagramZones = diagram.zones && diagram.zones.length > 0 ? diagram.zones : zones;
+			const layoutResult = computeTierLayout(diagram.components, diagramZones);
+			loadDiagram({ ...diagram, zones: diagramZones, positions: layoutResult.components });
 			setAppliedBlocks((prev) => new Set(prev).add(yamlStr));
 		},
 		[loadDiagram, zones],
@@ -167,12 +342,19 @@ export function AIPanel(): React.ReactElement {
 		send("Generate a complete architecture diagram based on the current diagram name and description. If the diagram is empty or untitled, create a sensible example architecture. Output the full YAML.");
 	}, [send]);
 
+	const onGenerateNow = useCallback(() => {
+		send("Based on what you know so far, generate the best architecture diagram you can. Note any assumptions you had to make due to incomplete information.");
+	}, [send]);
+
 	const onSubmit = useCallback(
 		(e: React.FormEvent) => {
 			e.preventDefault();
 			const trimmed = input.trim();
 			if (!trimmed || loading) return;
 			setInput("");
+			if (textareaRef.current) {
+				textareaRef.current.style.height = "auto";
+			}
 			send(trimmed);
 		},
 		[input, loading, send],
@@ -205,11 +387,66 @@ export function AIPanel(): React.ReactElement {
 
 	return (
 		<div style={PANEL_STYLE}>
+			{/* Mode Toggle */}
+			<div style={MODE_TOGGLE_ROW}>
+				<div style={MODE_TOGGLE_TRACK}>
+					{(["freeform", "guided"] as const).map((m) => (
+						<button
+							key={m}
+							style={{
+								...MODE_TOGGLE_BTN,
+								...(mode === m ? MODE_TOGGLE_ACTIVE : {}),
+							}}
+							onClick={() => setMode(m)}
+						>
+							{m === "guided" && (
+								<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+									<circle cx="12" cy="12" r="10" />
+									<path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+									<line x1="12" y1="17" x2="12.01" y2="17" />
+								</svg>
+							)}
+							{m === "freeform" ? "Freeform" : "Guided"}
+						</button>
+					))}
+				</div>
+			</div>
+
+			{/* Confidence Bar (guided only) */}
+			{mode === "guided" && guidedMessages.length > 0 && (
+				<div style={CONFIDENCE_ROW}>
+					<div style={CONFIDENCE_TRACK}>
+						<div
+							style={{
+								...CONFIDENCE_FILL,
+								width: `${confidence}%`,
+								background: confidence >= 95 ? "oklch(0.65 0.2 145)" : "var(--wf-accent)",
+							}}
+						/>
+					</div>
+					<span style={CONFIDENCE_LABEL}>{confidence}%</span>
+				</div>
+			)}
+
 			<div ref={threadRef} style={THREAD_STYLE}>
+				{/* Auto-suggestion hint for empty canvas */}
+				{showHint && (
+					<div style={HINT_STYLE}>
+						<span>Starting from scratch? Try <strong>Guided</strong> mode — I'll ask a few questions to understand your system before generating.</span>
+						<button style={HINT_DISMISS} onClick={() => setHintDismissed(true)}>
+							<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+								<line x1="18" y1="6" x2="6" y2="18" />
+								<line x1="6" y1="6" x2="18" y2="18" />
+							</svg>
+						</button>
+					</div>
+				)}
+
 				{messages.length === 0 && !loading && (
 					<div style={EMPTY_STYLE}>
-						Describe an architecture and click Generate, or ask
-						questions about your diagram.
+						{mode === "guided"
+							? "I'll help you design your architecture step by step. Describe what you're building in a sentence or two, and I'll ask clarifying questions until I understand your system."
+							: "Describe an architecture and click Generate, or ask questions about your diagram."}
 					</div>
 				)}
 
@@ -232,7 +469,7 @@ export function AIPanel(): React.ReactElement {
 							</div>
 						) : (
 							<AssistantMessage
-								content={msg.content}
+								content={mode === "guided" ? stripConfidenceMarker(msg.content) : msg.content}
 								onApply={applyYaml}
 								appliedBlocks={appliedBlocks}
 							/>
@@ -247,67 +484,99 @@ export function AIPanel(): React.ReactElement {
 				)}
 			</div>
 
-			<div style={ACTIONS_STYLE}>
-				<button
-					style={GENERATE_BTN}
-					onClick={onGenerate}
-					disabled={loading}
-					onMouseEnter={(e) => {
-						if (!loading)
-							e.currentTarget.style.borderColor =
-								"var(--wf-accent)";
-					}}
-					onMouseLeave={(e) => {
-						e.currentTarget.style.borderColor =
-							"var(--wf-accent-dim)";
-					}}
-				>
-					<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-						<polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-					</svg>
-					Generate Diagram
-				</button>
-			</div>
-			<div style={ACTIONS_STYLE}>
-				<button
-					style={ACTION_BTN}
-					onClick={onReview}
-					disabled={loading}
-					onMouseEnter={(e) => {
-						if (!loading)
-							e.currentTarget.style.borderColor =
-								"var(--wf-accent)";
-					}}
-					onMouseLeave={(e) => {
-						e.currentTarget.style.borderColor = "var(--wf-border)";
-					}}
-				>
-					Review Architecture
-				</button>
-				<button
-					style={ACTION_BTN}
-					onClick={onSuggest}
-					disabled={loading}
-					onMouseEnter={(e) => {
-						if (!loading)
-							e.currentTarget.style.borderColor =
-								"var(--wf-accent)";
-					}}
-					onMouseLeave={(e) => {
-						e.currentTarget.style.borderColor = "var(--wf-border)";
-					}}
-				>
-					Suggest Components
-				</button>
-			</div>
+			{mode === "freeform" ? (
+				<>
+					<div style={ACTIONS_STYLE}>
+						<button
+							style={GENERATE_BTN}
+							onClick={onGenerate}
+							disabled={loading}
+							onMouseEnter={(e) => {
+								if (!loading) e.currentTarget.style.borderColor = "var(--wf-accent)";
+							}}
+							onMouseLeave={(e) => {
+								e.currentTarget.style.borderColor = "var(--wf-accent-dim)";
+							}}
+						>
+							<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+								<polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+							</svg>
+							Generate Diagram
+						</button>
+					</div>
+					<div style={ACTIONS_STYLE}>
+						<button
+							style={ACTION_BTN}
+							onClick={onReview}
+							disabled={loading}
+							onMouseEnter={(e) => {
+								if (!loading) e.currentTarget.style.borderColor = "var(--wf-accent)";
+							}}
+							onMouseLeave={(e) => {
+								e.currentTarget.style.borderColor = "var(--wf-border)";
+							}}
+						>
+							Review Architecture
+						</button>
+						<button
+							style={ACTION_BTN}
+							onClick={onSuggest}
+							disabled={loading}
+							onMouseEnter={(e) => {
+								if (!loading) e.currentTarget.style.borderColor = "var(--wf-accent)";
+							}}
+							onMouseLeave={(e) => {
+								e.currentTarget.style.borderColor = "var(--wf-border)";
+							}}
+						>
+							Suggest Components
+						</button>
+					</div>
+				</>
+			) : (
+				guidedMessages.length > 0 && (
+					<div style={ACTIONS_STYLE}>
+						<button
+							style={GENERATE_NOW_BTN}
+							onClick={onGenerateNow}
+							disabled={loading}
+							onMouseEnter={(e) => {
+								if (!loading) e.currentTarget.style.borderColor = "var(--wf-accent)";
+							}}
+							onMouseLeave={(e) => {
+								e.currentTarget.style.borderColor = "var(--wf-accent-dim)";
+							}}
+						>
+							<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+								<polygon points="5 3 19 12 5 21 5 3" />
+							</svg>
+							Generate Now
+						</button>
+					</div>
+				)
+			)}
 
 			<form onSubmit={onSubmit} style={INPUT_ROW}>
-				<input
-					type="text"
+				<textarea
+					ref={textareaRef}
 					value={input}
-					onChange={(e) => setInput(e.target.value)}
-					placeholder="Describe an architecture to generate..."
+					onChange={(e) => {
+						setInput(e.target.value);
+						const el = e.target;
+						el.style.height = "auto";
+						el.style.height = `${Math.min(el.scrollHeight, 120)}px`;
+					}}
+					onKeyDown={(e) => {
+						if (e.key === "Enter" && !e.shiftKey) {
+							e.preventDefault();
+							onSubmit(e as unknown as React.FormEvent);
+						}
+					}}
+					placeholder={mode === "guided"
+						? "Describe what you're building..."
+						: "Describe an architecture to generate..."}
 					disabled={loading}
+					rows={1}
 					style={INPUT_STYLE}
 				/>
 				<button
@@ -337,7 +606,7 @@ export function AIPanel(): React.ReactElement {
 	);
 }
 
-function AssistantMessage({
+const AssistantMessage = memo(function AssistantMessage({
 	content,
 	onApply,
 	appliedBlocks,
@@ -349,7 +618,7 @@ function AssistantMessage({
 	const yamlBlocks = extractYamlBlocks(content);
 
 	if (yamlBlocks.length === 0) {
-		return <div style={{ whiteSpace: "pre-wrap" }}>{content}</div>;
+		return renderMarkdownBlock(content);
 	}
 
 	const segments = content.split(/```yaml\s*\n[\s\S]*?```/);
@@ -359,8 +628,8 @@ function AssistantMessage({
 		const text = segments[i].trim();
 		if (text) {
 			parts.push(
-				<div key={`text-${i}`} style={{ whiteSpace: "pre-wrap" }}>
-					{text}
+				<div key={`text-${i}`}>
+					{renderMarkdownBlock(text)}
 				</div>,
 			);
 		}
@@ -379,9 +648,9 @@ function AssistantMessage({
 	}
 
 	return <>{parts}</>;
-}
+});
 
-function YamlBlock({
+const YamlBlock = memo(function YamlBlock({
 	yaml,
 	applied,
 	onApply,
@@ -449,9 +718,9 @@ function YamlBlock({
 			</pre>
 		</div>
 	);
-}
+});
 
-function TypingDots(): React.ReactElement {
+const TypingDots = memo(function TypingDots(): React.ReactElement {
 	return (
 		<div style={{ display: "flex", gap: 4, padding: "2px 0" }}>
 			{[0, 1, 2].map((i) => (
@@ -474,7 +743,119 @@ function TypingDots(): React.ReactElement {
 			</style>
 		</div>
 	);
-}
+});
+
+const MODE_TOGGLE_ROW: CSSProperties = {
+	padding: "8px 12px 4px",
+	flexShrink: 0,
+};
+
+const MODE_TOGGLE_TRACK: CSSProperties = {
+	display: "flex",
+	background: "var(--wf-bg)",
+	border: "1px solid var(--wf-border)",
+	borderRadius: 6,
+	padding: 2,
+	gap: 2,
+};
+
+const MODE_TOGGLE_BTN: CSSProperties = {
+	flex: 1,
+	padding: "4px 0",
+	background: "none",
+	border: "1px solid transparent",
+	borderRadius: 4,
+	cursor: "pointer",
+	fontFamily: "'Geist', ui-sans-serif, system-ui, sans-serif",
+	fontSize: 10,
+	fontWeight: 600,
+	color: "var(--wf-text-dim)",
+	transition: "all 0.15s ease",
+	display: "flex",
+	alignItems: "center",
+	justifyContent: "center",
+	gap: 4,
+};
+
+const MODE_TOGGLE_ACTIVE: CSSProperties = {
+	background: "var(--wf-card)",
+	color: "var(--wf-accent)",
+	border: "1px solid var(--wf-border)",
+};
+
+const CONFIDENCE_ROW: CSSProperties = {
+	display: "flex",
+	alignItems: "center",
+	gap: 6,
+	padding: "4px 12px",
+	flexShrink: 0,
+};
+
+const CONFIDENCE_TRACK: CSSProperties = {
+	flex: 1,
+	height: 3,
+	background: "var(--wf-border)",
+	borderRadius: 2,
+	overflow: "hidden",
+};
+
+const CONFIDENCE_FILL: CSSProperties = {
+	height: "100%",
+	borderRadius: 2,
+	transition: "width 0.5s ease, background 0.3s ease",
+};
+
+const CONFIDENCE_LABEL: CSSProperties = {
+	fontFamily: "'Geist Mono', ui-monospace, SFMono-Regular, monospace",
+	fontSize: 9,
+	fontWeight: 600,
+	color: "var(--wf-text-dim)",
+	minWidth: 28,
+	textAlign: "right",
+};
+
+const HINT_STYLE: CSSProperties = {
+	display: "flex",
+	alignItems: "flex-start",
+	gap: 6,
+	padding: "8px 10px",
+	margin: "0 0 4px",
+	background: "var(--wf-accent-dim)",
+	borderRadius: 8,
+	fontFamily: "'Geist', ui-sans-serif, system-ui, sans-serif",
+	fontSize: 11,
+	lineHeight: 1.5,
+	color: "var(--wf-accent)",
+};
+
+const HINT_DISMISS: CSSProperties = {
+	background: "none",
+	border: "none",
+	cursor: "pointer",
+	padding: 2,
+	color: "var(--wf-accent)",
+	opacity: 0.6,
+	flexShrink: 0,
+	marginTop: 1,
+};
+
+const GENERATE_NOW_BTN: CSSProperties = {
+	flex: 1,
+	padding: "8px 4px",
+	background: "var(--wf-accent-dim)",
+	border: "1px solid var(--wf-accent-dim)",
+	borderRadius: 6,
+	cursor: "pointer",
+	fontFamily: "'Geist', ui-sans-serif, system-ui, sans-serif",
+	fontSize: 11,
+	fontWeight: 600,
+	color: "var(--wf-accent)",
+	transition: "border-color 0.15s ease",
+	display: "flex",
+	alignItems: "center",
+	justifyContent: "center",
+	gap: 6,
+};
 
 const NO_KEY_STYLE: CSSProperties = {
 	flex: 1,
@@ -484,7 +865,7 @@ const NO_KEY_STYLE: CSSProperties = {
 	justifyContent: "center",
 	padding: 24,
 	textAlign: "center",
-	fontFamily: "'Space Grotesk', sans-serif",
+	fontFamily: "'Geist', ui-sans-serif, system-ui, sans-serif",
 	color: "var(--wf-text-dim)",
 };
 
@@ -505,7 +886,7 @@ const THREAD_STYLE: CSSProperties = {
 };
 
 const EMPTY_STYLE: CSSProperties = {
-	fontFamily: "'Space Grotesk', sans-serif",
+	fontFamily: "'Geist', ui-sans-serif, system-ui, sans-serif",
 	fontSize: 11,
 	color: "var(--wf-text-dim)",
 	textAlign: "center",
@@ -514,7 +895,7 @@ const EMPTY_STYLE: CSSProperties = {
 };
 
 const BUBBLE_BASE: CSSProperties = {
-	fontFamily: "'Space Grotesk', sans-serif",
+	fontFamily: "'Geist', ui-sans-serif, system-ui, sans-serif",
 	fontSize: 11,
 	lineHeight: 1.5,
 	padding: "8px 10px",
@@ -564,7 +945,7 @@ const ACTION_BTN: CSSProperties = {
 	border: "1px solid var(--wf-border)",
 	borderRadius: 6,
 	cursor: "pointer",
-	fontFamily: "'Space Grotesk', sans-serif",
+	fontFamily: "'Geist', ui-sans-serif, system-ui, sans-serif",
 	fontSize: 10,
 	fontWeight: 600,
 	color: "var(--wf-text-sec)",
@@ -573,6 +954,7 @@ const ACTION_BTN: CSSProperties = {
 
 const INPUT_ROW: CSSProperties = {
 	display: "flex",
+	alignItems: "flex-end",
 	gap: 6,
 	padding: "8px 12px",
 	borderTop: "1px solid var(--wf-border)",
@@ -585,17 +967,23 @@ const INPUT_STYLE: CSSProperties = {
 	background: "var(--wf-card)",
 	border: "1px solid var(--wf-border)",
 	borderRadius: 6,
-	fontFamily: "'Space Grotesk', sans-serif",
+	fontFamily: "'Geist', ui-sans-serif, system-ui, sans-serif",
 	fontSize: 11,
 	color: "var(--wf-text)",
 	outline: "none",
+	resize: "none",
+	lineHeight: 1.5,
+	maxHeight: 120,
+	overflowY: "auto",
 };
 
 const SEND_BTN: CSSProperties = {
 	background: "var(--wf-accent)",
 	border: "none",
 	borderRadius: 6,
-	padding: "6px 8px",
+	width: 30,
+	height: 30,
+	flexShrink: 0,
 	cursor: "pointer",
 	color: "white",
 	display: "flex",
@@ -611,7 +999,7 @@ const GENERATE_BTN: CSSProperties = {
 	border: "1px solid var(--wf-accent-dim)",
 	borderRadius: 6,
 	cursor: "pointer",
-	fontFamily: "'Space Grotesk', sans-serif",
+	fontFamily: "'Geist', ui-sans-serif, system-ui, sans-serif",
 	fontSize: 11,
 	fontWeight: 600,
 	color: "var(--wf-accent)",
@@ -660,7 +1048,7 @@ const APPLY_BTN: CSSProperties = {
 	border: "none",
 	borderRadius: 4,
 	cursor: "pointer",
-	fontFamily: "'Space Grotesk', sans-serif",
+	fontFamily: "'Geist', ui-sans-serif, system-ui, sans-serif",
 	fontSize: 10,
 	fontWeight: 600,
 	transition: "opacity 0.15s ease",
@@ -677,7 +1065,7 @@ const YAML_CODE_STYLE: CSSProperties = {
 	padding: "6px 8px",
 	fontSize: 10,
 	lineHeight: 1.4,
-	fontFamily: "'SF Mono', 'Fira Code', monospace",
+	fontFamily: "'Geist Mono', ui-monospace, SFMono-Regular, monospace",
 	color: "var(--wf-text-sec)",
 	overflow: "auto",
 	maxHeight: 200,

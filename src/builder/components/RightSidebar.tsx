@@ -4,11 +4,13 @@ import type { UiSlice } from "../store/builder-store";
 import { AIPanel } from "./AIPanel";
 import { PropertiesPanel } from "./PropertiesPanel";
 import { YamlPreview } from "./YamlPreview";
+import { LearnPanel } from "./LearnPanel";
 
 const TABS: { key: UiSlice["activePanel"]; label: string }[] = [
 	{ key: "properties", label: "Properties" },
 	{ key: "yaml", label: "YAML" },
 	{ key: "ai", label: "AI" },
+	{ key: "learn", label: "Learn" },
 ];
 
 const CONTAINER: CSSProperties = {
@@ -35,7 +37,7 @@ function tabStyle(active: boolean): CSSProperties {
 		border: "none",
 		borderBottom: active ? "2px solid var(--wf-accent)" : "2px solid transparent",
 		cursor: "pointer",
-		fontFamily: "'Space Grotesk', sans-serif",
+		fontFamily: "'Geist', ui-sans-serif, system-ui, sans-serif",
 		fontSize: 11,
 		fontWeight: 600,
 		textTransform: "uppercase",
@@ -79,10 +81,22 @@ export function RightSidebar(): React.ReactElement {
 					inset: 0,
 					display: "flex",
 					flexDirection: "column",
+					overflow: "hidden",
 					visibility: activePanel === "ai" ? "visible" : "hidden",
 					pointerEvents: activePanel === "ai" ? "auto" : "none",
 				}}>
 					<AIPanel />
+				</div>
+				<div style={{
+					position: activePanel === "learn" ? "relative" : "absolute",
+					inset: 0,
+					display: "flex",
+					flexDirection: "column",
+					overflow: "hidden",
+					visibility: activePanel === "learn" ? "visible" : "hidden",
+					pointerEvents: activePanel === "learn" ? "auto" : "none",
+				}}>
+					<LearnPanel />
 				</div>
 			</div>
 		</div>

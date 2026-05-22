@@ -20,7 +20,7 @@ interface DiagramSlice {
 interface UiSlice {
 	selectedNodeId: string | null;
 	selectedEdgeId: string | null;
-	activePanel: "properties" | "ai" | "yaml";
+	activePanel: "properties" | "ai" | "yaml" | "learn";
 	aiPanelOpen: boolean;
 }
 
