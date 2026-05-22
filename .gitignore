@@ -28,3 +28,9 @@ screenshots/
 *.njsproj
 *.sln
 *.sw?
+
+# Test artifacts
+coverage/
+playwright-report/
+test-results/
+blob-report/
