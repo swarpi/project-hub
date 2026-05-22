@@ -41,6 +41,8 @@ _Completed tickets. Move here when done, newest first._
 
 | Ticket | Feature | Completed |
 |--------|---------|-----------|
+| [015 — E2E: YAML round-trip, zones, hub with visual regression](testing/015-e2e-yaml-zones-hub-visual.md) | testing | 2026-05-22 |
+| [014 — E2E: builder core flows with visual regression](testing/014-e2e-builder-core-visual.md) | testing | 2026-05-22 |
 | [006 — Network layer unit tests](testing/006-network-layer-tests.md) | testing | 2026-05-22 |
 | [005 — Education and learn-analysis unit tests](testing/005-education-and-learn-analysis-tests.md) | testing | 2026-05-22 |
 | [004 — Layout, zone-layout, and node-styles unit tests](testing/004-layout-and-style-tests.md) | testing | 2026-05-22 |
