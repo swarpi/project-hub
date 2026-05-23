@@ -22,6 +22,7 @@ interface UiSlice {
 	selectedEdgeId: string | null;
 	activePanel: "properties" | "ai" | "yaml" | "learn";
 	aiPanelOpen: boolean;
+	pinnedTooltipId: string | null;
 }
 
 interface SettingsSlice {
@@ -78,6 +79,8 @@ interface UiActions {
 	selectEdge: (id: string | null) => void;
 	clearSelection: () => void;
 	setActivePanel: (panel: UiSlice["activePanel"]) => void;
+	pinTooltip: (id: string) => void;
+	unpinTooltip: () => void;
 }
 
 interface SettingsActions {
@@ -188,6 +191,7 @@ export const useBuilderStore = create<BuilderState>()(
 				selectedEdgeId: null,
 				activePanel: "properties" as const,
 				aiPanelOpen: false,
+				pinnedTooltipId: null,
 
 				apiKey: savedSettings.apiKey ?? "",
 				aiBaseUrl: savedSettings.aiBaseUrl ?? "http://localhost:3456",
@@ -291,6 +295,7 @@ export const useBuilderStore = create<BuilderState>()(
 						layoutVersion: 3,
 						selectedNodeId: null,
 						selectedEdgeId: null,
+						pinnedTooltipId: null,
 					}),
 
 				mergeDiagram: (diagram) =>
@@ -359,6 +364,7 @@ export const useBuilderStore = create<BuilderState>()(
 							layoutVersion: 3,
 							selectedNodeId: null,
 							selectedEdgeId: null,
+							pinnedTooltipId: null,
 						};
 					}),
 
@@ -369,9 +375,13 @@ export const useBuilderStore = create<BuilderState>()(
 					set({ selectedEdgeId: id, selectedNodeId: null }),
 
 				clearSelection: () =>
-					set({ selectedNodeId: null, selectedEdgeId: null }),
+					set({ selectedNodeId: null, selectedEdgeId: null, pinnedTooltipId: null }),
 
 				setActivePanel: (panel) => set({ activePanel: panel }),
+
+				pinTooltip: (id) => set({ pinnedTooltipId: id }),
+
+				unpinTooltip: () => set({ pinnedTooltipId: null }),
 
 				setApiKey: (key) => set({ apiKey: key }),
 

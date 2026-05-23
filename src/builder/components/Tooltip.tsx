@@ -1,16 +1,20 @@
 import { useState, useRef, useCallback, useEffect, type CSSProperties, type ReactNode } from "react";
 import { createPortal } from "react-dom";
+import { useTooltipPin } from "../hooks/useTooltipPin";
 
 interface TooltipProps {
   content: ReactNode;
   children: (props: {
     onMouseEnter: (e: React.MouseEvent) => void;
     onMouseLeave: (e: React.MouseEvent) => void;
+    onClick: (e: React.MouseEvent) => void;
     ref: React.RefObject<HTMLElement | null>;
   }) => ReactNode;
   delay?: number;
   maxWidth?: number;
   placement?: "top" | "bottom" | "left" | "right" | "auto";
+  pinnable?: boolean;
+  pinId?: string;
 }
 
 const TOOLTIP_CONTAINER: CSSProperties = {
@@ -33,7 +37,7 @@ export const TOOLTIP_CARD: CSSProperties = {
   backdropFilter: "blur(12px)",
 };
 
-export function Tooltip({ content, children, delay = 400, maxWidth = 320, placement = "auto" }: TooltipProps) {
+export function Tooltip({ content, children, delay = 400, maxWidth = 320, placement = "auto", pinnable = false, pinId }: TooltipProps) {
   const [visible, setVisible] = useState(false);
   const [entered, setEntered] = useState(false);
   const [coords, setCoords] = useState({ x: 0, y: 0 });
@@ -41,56 +45,74 @@ export function Tooltip({ content, children, delay = 400, maxWidth = 320, placem
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const anchorRef = useRef<HTMLElement | null>(null);
   const tooltipRef = useRef<HTMLDivElement | null>(null);
+  const { isPinned, togglePin, unpin } = useTooltipPin(pinnable ? pinId : undefined);
+
+  const computePosition = useCallback((target: HTMLElement) => {
+    const rect = target.getBoundingClientRect();
+    const pad = 12;
+
+    let place = placement;
+    if (place === "auto") {
+      const spaceAbove = rect.top;
+      const spaceBelow = window.innerHeight - rect.bottom;
+      const spaceRight = window.innerWidth - rect.right;
+      const spaceLeft = rect.left;
+
+      if (spaceAbove > 200) place = "top";
+      else if (spaceBelow > 200) place = "bottom";
+      else if (spaceRight > maxWidth + pad) place = "right";
+      else if (spaceLeft > maxWidth + pad) place = "left";
+      else place = "bottom";
+    }
+
+    let x: number;
+    let y: number;
+
+    switch (place) {
+      case "top":
+        x = rect.left + rect.width / 2;
+        y = rect.top - pad;
+        break;
+      case "bottom":
+        x = rect.left + rect.width / 2;
+        y = rect.bottom + pad;
+        break;
+      case "left":
+        x = rect.left - pad;
+        y = rect.top + rect.height / 2;
+        break;
+      case "right":
+        x = rect.right + pad;
+        y = rect.top + rect.height / 2;
+        break;
+    }
+
+    const half = maxWidth / 2;
+    const estimatedHeight = 200;
+    x = Math.max(half + pad, Math.min(window.innerWidth - half - pad, x));
+    if (place === "top") {
+      y = Math.max(estimatedHeight + pad, y);
+    } else if (place === "bottom") {
+      y = Math.min(window.innerHeight - estimatedHeight - pad, y);
+    } else {
+      y = Math.max(estimatedHeight / 2 + pad, Math.min(window.innerHeight - estimatedHeight / 2 - pad, y));
+    }
+
+    return { x, y, place };
+  }, [maxWidth, placement]);
 
   const show = useCallback((e: React.MouseEvent) => {
     timerRef.current = setTimeout(() => {
       const target = anchorRef.current ?? (e.currentTarget as HTMLElement);
-      const rect = target.getBoundingClientRect();
-      const pad = 12;
-
-      let place = placement;
-      if (place === "auto") {
-        const spaceAbove = rect.top;
-        const spaceBelow = window.innerHeight - rect.bottom;
-        const spaceRight = window.innerWidth - rect.right;
-        const spaceLeft = rect.left;
-
-        if (spaceAbove > 200) place = "top";
-        else if (spaceBelow > 200) place = "bottom";
-        else if (spaceRight > maxWidth + pad) place = "right";
-        else if (spaceLeft > maxWidth + pad) place = "left";
-        else place = "bottom";
-      }
-
-      let x: number;
-      let y: number;
-
-      switch (place) {
-        case "top":
-          x = rect.left + rect.width / 2;
-          y = rect.top - pad;
-          break;
-        case "bottom":
-          x = rect.left + rect.width / 2;
-          y = rect.bottom + pad;
-          break;
-        case "left":
-          x = rect.left - pad;
-          y = rect.top + rect.height / 2;
-          break;
-        case "right":
-          x = rect.right + pad;
-          y = rect.top + rect.height / 2;
-          break;
-      }
-
+      const { x, y, place } = computePosition(target);
       setCoords({ x, y });
       setActualPlacement(place);
       setVisible(true);
     }, delay);
-  }, [delay, maxWidth, placement]);
+  }, [delay, computePosition]);
 
   const hide = useCallback((e: React.MouseEvent) => {
+    if (isPinned) return;
     if (
       anchorRef.current &&
       e.relatedTarget instanceof Node &&
@@ -103,7 +125,19 @@ export function Tooltip({ content, children, delay = 400, maxWidth = 320, placem
       timerRef.current = null;
     }
     setVisible(false);
-  }, []);
+  }, [isPinned]);
+
+  const handleClick = useCallback((e: React.MouseEvent) => {
+    if (!pinnable) return;
+    e.stopPropagation();
+    if (!isPinned && anchorRef.current) {
+      const { x, y, place } = computePosition(anchorRef.current);
+      setCoords({ x, y });
+      setActualPlacement(place);
+      setVisible(true);
+    }
+    togglePin();
+  }, [pinnable, isPinned, togglePin, computePosition]);
 
   useEffect(() => {
     return () => {
@@ -112,12 +146,20 @@ export function Tooltip({ content, children, delay = 400, maxWidth = 320, placem
   }, []);
 
   useEffect(() => {
-    if (visible) {
+    if (!isPinned) {
+      setVisible(false);
+    }
+  }, [isPinned]);
+
+  useEffect(() => {
+    if (visible || isPinned) {
       const raf = requestAnimationFrame(() => setEntered(true));
       return () => cancelAnimationFrame(raf);
     }
     setEntered(false);
-  }, [visible]);
+  }, [visible, isPinned]);
+
+  const isShown = visible || isPinned;
 
   const getTransform = (): string => {
     switch (actualPlacement) {
@@ -139,8 +181,8 @@ export function Tooltip({ content, children, delay = 400, maxWidth = 320, placem
 
   return (
     <>
-      {children({ onMouseEnter: show, onMouseLeave: hide, ref: anchorRef })}
-      {visible && createPortal(
+      {children({ onMouseEnter: show, onMouseLeave: hide, onClick: handleClick, ref: anchorRef })}
+      {isShown && createPortal(
         <div
           ref={tooltipRef}
           style={{
@@ -149,9 +191,24 @@ export function Tooltip({ content, children, delay = 400, maxWidth = 320, placem
             top: coords.y,
             transform: entered ? getTransform() : getEnterTransform(),
             opacity: entered ? 1 : 0,
+            pointerEvents: isPinned ? "auto" : "none",
           }}
         >
-          <div style={{ ...TOOLTIP_CARD, maxWidth }}>
+          <div style={{ ...TOOLTIP_CARD, maxWidth, position: "relative" }}>
+            {isPinned && (
+              <button
+                onClick={(e) => { e.stopPropagation(); unpin(); }}
+                style={{
+                  position: "absolute", top: 4, right: 6,
+                  background: "none", border: "none", cursor: "pointer",
+                  color: "var(--wf-text-dim, #888)", fontSize: 13, lineHeight: 1,
+                  padding: "2px 4px", fontFamily: "'Geist', sans-serif",
+                }}
+                aria-label="Close tooltip"
+              >
+                ×
+              </button>
+            )}
             {content}
           </div>
         </div>,

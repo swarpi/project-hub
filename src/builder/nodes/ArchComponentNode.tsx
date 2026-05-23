@@ -208,12 +208,13 @@ export const ArchComponentNode = memo(function ArchComponentNode({
 			<Handle type="target" position={Position.Left} id="left-tgt" style={handleStyle} />
 			<Handle type="source" position={Position.Right} id="right-src" style={handleStyle} />
 			<Handle type="target" position={Position.Right} id="right-tgt" style={handleStyle} />
-			<Tooltip content={<NodeTooltipContent data={data} />} maxWidth={340}>
-				{({ onMouseEnter, onMouseLeave, ref }) => (
+			<Tooltip content={<NodeTooltipContent data={data} />} maxWidth={340} pinnable pinId={`node:${data.id}`}>
+				{({ onMouseEnter, onMouseLeave, onClick, ref }) => (
 					<div
 						ref={ref as React.Ref<HTMLDivElement>}
 						onMouseEnter={onMouseEnter}
 						onMouseLeave={onMouseLeave}
+						onClick={onClick}
 						style={{
 							width: "100%",
 							background: active ? color.light : "var(--wf-card)",

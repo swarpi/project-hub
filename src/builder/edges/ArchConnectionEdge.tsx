@@ -11,6 +11,7 @@ import type { ColorKey } from "../lib/node-styles";
 import { useBuilderStore } from "../store/builder-store";
 import { getProtocolInfo, STYLE_EXPLANATIONS } from "../lib/education";
 import { TT_HEADING, TT_LABEL, TT_TEXT, TT_DIVIDER, TT_BADGE, TOOLTIP_CARD } from "../components/Tooltip";
+import { useTooltipPin } from "../hooks/useTooltipPin";
 
 interface ArchConnectionData extends Record<string, unknown> {
 	protocol: string;
@@ -184,18 +185,31 @@ export function ArchConnectionEdge({
 	const [tooltipCoords, setTooltipCoords] = useState({ x: 0, y: 0 });
 	const [tooltipBelow, setTooltipBelow] = useState(false);
 	const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+	const pinId = `edge:${source}->${target}`;
+	const { isPinned, togglePin, unpin } = useTooltipPin(pinId);
+
+	const computeEdgeTooltipCoords = useCallback((clientX: number, clientY: number) => {
+		const estimatedHeight = 180;
+		const tooltipHalf = 170;
+		const pad = 12;
+		const below = clientY < estimatedHeight + pad;
+		return {
+			x: Math.max(tooltipHalf + pad, Math.min(window.innerWidth - tooltipHalf - pad, clientX)),
+			y: below
+				? Math.min(clientY + pad, window.innerHeight - estimatedHeight - pad)
+				: Math.max(clientY - pad, estimatedHeight + pad),
+			below,
+		};
+	}, []);
 
 	const onMouseEnter = useCallback((e: React.MouseEvent) => {
 		timerRef.current = setTimeout(() => {
-			const below = e.clientY < 200;
+			const { x, y, below } = computeEdgeTooltipCoords(e.clientX, e.clientY);
 			setTooltipBelow(below);
-			setTooltipCoords({
-				x: Math.max(170, Math.min(window.innerWidth - 170, e.clientX)),
-				y: below ? e.clientY + 12 : e.clientY - 12,
-			});
+			setTooltipCoords({ x, y });
 			setHovered(true);
 		}, 400);
-	}, []);
+	}, [computeEdgeTooltipCoords]);
 
 	const onMouseLeave = useCallback(() => {
 		if (timerRef.current) {
@@ -204,6 +218,15 @@ export function ArchConnectionEdge({
 		}
 		setHovered(false);
 	}, []);
+
+	const onEdgeClick = useCallback((e: React.MouseEvent) => {
+		if (!isPinned) {
+			const { x, y, below } = computeEdgeTooltipCoords(e.clientX, e.clientY);
+			setTooltipBelow(below);
+			setTooltipCoords({ x, y });
+		}
+		togglePin();
+	}, [isPinned, togglePin, computeEdgeTooltipCoords]);
 
 	useEffect(() => {
 		return () => {
@@ -237,7 +260,7 @@ export function ArchConnectionEdge({
 				}}
 			/>
 
-			{/* Invisible wider hit area for hover */}
+			{/* Invisible wider hit area for hover and click */}
 			<path
 				d={path}
 				fill="none"
@@ -246,6 +269,7 @@ export function ArchConnectionEdge({
 				style={{ cursor: "pointer" }}
 				onMouseEnter={onMouseEnter}
 				onMouseLeave={onMouseLeave}
+				onClick={onEdgeClick}
 			/>
 
 			{data?.protocol && (
@@ -254,6 +278,7 @@ export function ArchConnectionEdge({
 						className="nodrag nopan"
 						onMouseEnter={onMouseEnter}
 						onMouseLeave={onMouseLeave}
+						onClick={onEdgeClick}
 						style={{
 							position: "absolute",
 							transform: `translate(-50%, -50%) translate(${labelX}px, ${labelY}px)`,
@@ -276,16 +301,30 @@ export function ArchConnectionEdge({
 				</EdgeLabelRenderer>
 			)}
 
-			{hovered && data && createPortal(
+			{(hovered || isPinned) && data && createPortal(
 				<div style={{
 					position: "fixed",
 					left: tooltipCoords.x,
 					top: tooltipCoords.y,
 					transform: tooltipBelow ? "translate(-50%, 0%)" : "translate(-50%, -100%)",
 					zIndex: 99999,
-					pointerEvents: "none",
+					pointerEvents: isPinned ? "auto" : "none",
 				}}>
-					<div style={{ ...TOOLTIP_CARD, maxWidth: 340 }}>
+					<div style={{ ...TOOLTIP_CARD, maxWidth: 340, position: "relative" }}>
+						{isPinned && (
+							<button
+								onClick={(e) => { e.stopPropagation(); unpin(); }}
+								style={{
+									position: "absolute", top: 4, right: 6,
+									background: "none", border: "none", cursor: "pointer",
+									color: "var(--wf-text-dim, #888)", fontSize: 13, lineHeight: 1,
+									padding: "2px 4px", fontFamily: "'Geist', sans-serif",
+								}}
+								aria-label="Close tooltip"
+							>
+								×
+							</button>
+						)}
 						<EdgeTooltipContent
 							data={data}
 							sourceId={source}
