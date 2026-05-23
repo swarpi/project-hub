@@ -1,7 +1,7 @@
 # Ticket: AIPanel and LearnPanel Integration Tests
 
 **Feature:** testing
-**Status:** Todo
+**Status:** Done
 **Priority:** P1
 **Estimate:** M
 **Related:** ADR-0005
@@ -63,8 +63,6 @@ For `AIPanel` guided mode tests, construct a response that includes a YAML code 
 
 ## Implementation Plan
 
-_To be filled in by the executor before starting work._
-
-1. Step 1
-2. Step 2
-3. Step 3
+1. Created `AIPanel.test.tsx` (18 tests) covering: no-key state, mode toggle, freeform mode (empty state, hint, submit, response rendering, action buttons), guided mode (empty state, Generate Now, confidence tracking, YAML apply-to-canvas), error handling (401, network), and YAML block rendering/application.
+2. Created `LearnPanel.test.tsx` (15 tests) covering: empty diagram, no-API-key static view, Generate/Refresh Analysis, loading state, parsed section rendering (overview, components, connections, pitfalls), error handling, and stale detection.
+3. MSW handlers used per-test via `server.use()` for specific response shapes. Default `aiBaseUrl` (`http://localhost:3456`) required explicit override to test no-key state.

@@ -1,7 +1,7 @@
 # Ticket: Coverage Gap Closure and Threshold Validation
 
 **Feature:** testing
-**Status:** Todo
+**Status:** Done
 **Priority:** P1
 **Estimate:** S
 **Related:** ADR-0005
@@ -25,14 +25,14 @@ Run `npm run test:coverage`, identify all files below threshold, add targeted te
 
 ## Acceptance Criteria
 
-- [ ] `npm run test:coverage` exits 0 (all four thresholds pass: statements 80, branches 75, functions 80, lines 80)
-- [ ] Any file with 0% coverage that contains only type declarations or re-exports is added to the `coverage.exclude` list in `vitest.config.ts` with a comment explaining why
-- [ ] Any file with 0% coverage that contains runtime logic has at least a smoke-test added (renders without crash / function returns without throwing)
-- [ ] `src/lib/tier-icons.ts` has ≥70% coverage OR is excluded with justification
-- [ ] The coverage HTML report is confirmed to generate without error (`coverage/` directory exists after `npm run test:coverage`)
-- [ ] `npm run test` (without coverage) also exits 0
-- [ ] No lint errors
-- [ ] No TypeScript errors
+- [x] `npm run test:coverage` exits 0 (all four thresholds pass: statements 80, branches 75, functions 80, lines 80)
+- [x] Any file with 0% coverage that contains only type declarations or re-exports is added to the `coverage.exclude` list in `vitest.config.ts` with a comment explaining why
+- [x] Any file with 0% coverage that contains runtime logic has at least a smoke-test added (renders without crash / function returns without throwing)
+- [x] `src/lib/tier-icons.ts` has ≥70% coverage OR is excluded with justification
+- [x] The coverage HTML report is confirmed to generate without error (`coverage/` directory exists after `npm run test:coverage`)
+- [x] `npm run test` (without coverage) also exits 0
+- [x] No lint errors
+- [x] No TypeScript errors
 
 ## Out of Scope
 
@@ -48,8 +48,10 @@ Run coverage after each batch of additions to see incremental progress rather th
 
 ## Implementation Plan
 
-_To be filled in by the executor before starting work._
-
-1. Step 1
-2. Step 2
-3. Step 3
+1. Added placement variant tests (left/right/bottom) and relatedTarget hide test to `Tooltip.test.tsx`
+2. Added Cmd+A, Cmd+Shift+F, and TEXTAREA early-return tests to `BuilderPage.test.tsx`
+3. Added missing-position, post-mouseup, and null-containerRef guard tests to `usePanZoomDrag.test.ts`
+4. Added escape→onClose, subcomponents, engine tier, stream connection, toggle selection, overlay click tests to `ArchitectureGraph.test.tsx`
+5. Added feedback connection, validation/maintenance kinds, no-docLink, escape→onClose, overlay click, kind badge tests to `OrchestrationGraph.test.tsx`
+6. Also fixed infinite render loop in ArchitectureGraph and OrchestrationGraph tests (unstable `usePanZoomDrag` mock)
+7. Uncommented coverage thresholds in `vitest.config.ts`

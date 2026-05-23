@@ -16,7 +16,7 @@ test("Hub loads with all sections", async ({ page }) => {
   await expect(
     page.getByRole("heading", { name: "Workflows" }).or(
       page.getByRole("heading", { name: "Projects" })
-    )
+    ).first()
   ).toBeVisible({ timeout: 10000 });
 
   await expect(page).toHaveScreenshot("hub-full.png", {
@@ -59,6 +59,57 @@ test("Hub sections are present", async ({ page }) => {
     // This is acceptable — the test verifies the app doesn't crash
     await expect(page.locator("body")).toBeVisible();
   }
+});
+
+test("Hub has a graph visualization container", async ({ page }) => {
+  await page.goto(HUB_URL);
+  await page.waitForLoadState("networkidle");
+
+  const pipelineSection = page.locator("#pipeline");
+  const isVisible = await pipelineSection.isVisible().catch(() => false);
+
+  if (isVisible) {
+    await expect(pipelineSection.locator("svg").first()).toBeVisible();
+    await expect(
+      pipelineSection.locator("[data-node-id]").first()
+    ).toBeVisible();
+  } else {
+    const workflowsSection = page.locator("#workflows");
+    const workflowButton = workflowsSection.locator("button").first();
+    await expect(workflowButton).toBeVisible({ timeout: 10000 });
+    await workflowButton.click();
+
+    const backButton = page.getByText("Back to projects");
+    await expect(backButton).toBeVisible({ timeout: 5000 });
+    await expect(
+      page.locator("[data-node-id]").first()
+    ).toBeVisible({ timeout: 5000 });
+
+    await backButton.click();
+  }
+});
+
+test("GraphModal opens on workflow click and closes via back button", async ({ page }) => {
+  await page.goto(HUB_URL);
+  await page.waitForLoadState("networkidle");
+
+  const workflowsSection = page.locator("#workflows");
+  await expect(workflowsSection).toBeVisible({ timeout: 10000 });
+
+  const firstWorkflowButton = workflowsSection.locator("button").first();
+  await expect(firstWorkflowButton).toBeVisible();
+  await firstWorkflowButton.click();
+
+  const backButton = page.getByText("Back to projects");
+  await expect(backButton).toBeVisible({ timeout: 5000 });
+
+  await expect(
+    page.locator("[data-node-id]").first()
+  ).toBeVisible({ timeout: 5000 });
+
+  await backButton.click();
+
+  await expect(backButton).toBeHidden({ timeout: 3000 });
 });
 
 test("Hub navigation links work", async ({ page }) => {

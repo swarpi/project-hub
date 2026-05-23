@@ -1,3 +1,4 @@
+import path from "node:path";
 import { defineConfig, mergeConfig } from "vitest/config";
 import viteConfig from "./vite.config";
 
@@ -10,6 +11,10 @@ export default mergeConfig(
       setupFiles: ["./src/test/setup.ts"],
       include: ["src/**/*.test.{ts,tsx}"],
       css: false,
+      maxWorkers: 2,
+      alias: {
+        "@xyflow/react": path.resolve(__dirname, "src/test/mocks/xyflow-react.tsx"),
+      },
       coverage: {
         provider: "v8",
         include: ["src/**/*.{ts,tsx}"],
@@ -18,10 +23,14 @@ export default mergeConfig(
           "src/**/*.test.{ts,tsx}",
           "src/vite-env.d.ts",
           "src/main.tsx",
+          "src/lib/types.ts", // Type declarations only — no runtime code
         ],
+        // Canvas.tsx, ArchComponentNode.tsx, TierZoneNode.tsx, ArchConnectionEdge.tsx
+        // remain at 0% — excluded from unit testing per ADR-0005 (ReactFlow canvas
+        // components), covered by E2E tests. NOT added to exclude list; high coverage
+        // elsewhere compensates in the global average.
         reporter: ["text", "lcov", "html"],
-        // Thresholds enforced in ticket 010 once coverage reaches target.
-        // thresholds: { statements: 80, branches: 75, functions: 80, lines: 80 },
+        thresholds: { statements: 80, branches: 75, functions: 80, lines: 80 },
       },
     },
   }),

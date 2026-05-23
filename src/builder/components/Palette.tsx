@@ -86,6 +86,8 @@ export function Palette(): React.ReactElement {
 					<div
 						key={zone.id}
 						draggable
+						data-testid="palette-zone-card"
+						data-zone-id={zone.id}
 						onDragStart={(e) => onDragStart(e, zone.id)}
 						onDoubleClick={() => onDoubleClick(zone)}
 						style={{

@@ -92,7 +92,7 @@ function ConnectionLayer({ positions, connections, agents }: { positions: Positi
 
   const getColor = (agentId: string) => {
     const agent = agents.find((a) => a.id === agentId);
-    return GRAPH_COLORS[agent?.color || 'indigo'];
+    return GRAPH_COLORS[agent?.color || 'indigo'] ?? GRAPH_COLORS.indigo;
   };
 
   const CURVATURE = 0.25;
@@ -199,7 +199,7 @@ function NodeCard({
   onDrag: (id: string, e: React.MouseEvent) => void;
   isDragging: boolean;
 }) {
-  const color = GRAPH_COLORS[agent.color || 'indigo'];
+  const color = GRAPH_COLORS[agent.color || 'indigo'] ?? GRAPH_COLORS.indigo;
   const [hovered, setHovered] = useState(false);
   const active = selected || hovered;
   const icon = ICONS[agent.id] || ICONS.default;
@@ -301,7 +301,7 @@ function NodeCard({
 }
 
 function DetailPanel({ agent, onClose, repoUrl }: { agent: Agent; onClose: () => void; repoUrl: string }) {
-  const color = GRAPH_COLORS[agent.color || 'indigo'];
+  const color = GRAPH_COLORS[agent.color || 'indigo'] ?? GRAPH_COLORS.indigo;
   const icon = ICONS[agent.id] || ICONS.default;
 
   return (

@@ -47,7 +47,7 @@ test("YAML preview shows diagram content", async ({ page }) => {
   expect(yamlText).toMatch(/\w+:/);
 
   // Fit view before screenshot
-  await page.getByTitle("Fit view").click();
+  await page.getByTitle("Fit view").first().click();
 
   await expect(page).toHaveScreenshot("yaml-preview.png", {
     maxDiffPixelRatio: 0.01,
@@ -113,7 +113,7 @@ test("YAML round-trip via import", async ({ page }) => {
   );
 
   // Fit view before screenshot
-  await page.getByTitle("Fit view").click();
+  await page.getByTitle("Fit view").first().click();
 
   await expect(page).toHaveScreenshot("yaml-roundtrip.png", {
     maxDiffPixelRatio: 0.01,
@@ -141,7 +141,7 @@ test("Add zone", async ({ page }) => {
   await expect(zoneNodes).toHaveCount(initialNodeCount + 1);
 
   // Fit view before screenshot
-  await page.getByTitle("Fit view").click();
+  await page.getByTitle("Fit view").first().click();
 
   await expect(page).toHaveScreenshot("zone-added.png", {
     maxDiffPixelRatio: 0.01,
@@ -194,7 +194,7 @@ test("Delete zone", async ({ page }) => {
   await expect(zoneNodes).toHaveCount(initialCount - 1);
 
   // Fit view before screenshot
-  await page.getByTitle("Fit view").click();
+  await page.getByTitle("Fit view").first().click();
 
   await expect(page).toHaveScreenshot("zone-deleted.png", {
     maxDiffPixelRatio: 0.01,

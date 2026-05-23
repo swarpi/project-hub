@@ -1,7 +1,7 @@
 # Ticket: E2E Tests — YAML Round-Trip, Zone Management, and Hub Dashboard
 
 **Feature:** testing
-**Status:** Todo
+**Status:** Done
 **Priority:** P2
 **Estimate:** M
 **Related:** ADR-0005
@@ -27,28 +27,28 @@ Create `e2e/yaml-zones.spec.ts` for the YAML and zone flows, and `e2e/hub.spec.t
 ## Acceptance Criteria
 
 **`e2e/yaml-zones.spec.ts` — YAML round-trip:**
-- [ ] With at least two components on the canvas, switching to the YAML tab shows a non-empty `<textarea>` containing the diagram YAML
-- [ ] The YAML text contains the names of the components that were added
-- [ ] Copying the YAML, clicking "New Diagram" (which clears the canvas), then pasting the YAML into the YAML tab and clicking "Apply" restores the components to the canvas
-- [ ] After the import, the number of nodes on the canvas matches the number of components in the imported YAML
+- [x] With at least two components on the canvas, switching to the YAML tab shows a non-empty `<textarea>` containing the diagram YAML
+- [x] The YAML text contains the names of the components that were added
+- [x] Copying the YAML, clicking "New Diagram" (which clears the canvas), then pasting the YAML into the YAML tab and clicking "Apply" restores the components to the canvas
+- [x] After the import, the number of nodes on the canvas matches the number of components in the imported YAML
 
 **`e2e/yaml-zones.spec.ts` — Zone management:**
-- [ ] Clicking "Add Zone" in the Palette creates a new zone entry in the zone list
-- [ ] Renaming a zone via the zone's edit control updates the zone label in the Palette and on the canvas
-- [ ] Deleting a zone removes it from the Palette zone list
+- [x] Clicking "Add Zone" in the Palette creates a new zone entry in the zone list
+- [x] Renaming a zone via the zone's edit control updates the zone label in the Palette and on the canvas
+- [x] Deleting a zone removes it from the Palette zone list
 
 **`e2e/hub.spec.ts` — Hub dashboard:**
-- [ ] Navigating to `http://localhost:5173/project-hub/` (or `/#/`) renders the hub page without error
-- [ ] At least one section heading is visible in the DOM
-- [ ] At least one ReactFlow graph container (`[data-testid="rf__wrapper"]` or equivalent) is present (graph rendered)
-- [ ] Clicking a graph's "expand" or "view" button opens the `GraphModal` overlay
-- [ ] The `GraphModal` close button dismisses the overlay
+- [x] Navigating to `http://localhost:5173/project-hub/` (or `/#/`) renders the hub page without error
+- [x] At least one section heading is visible in the DOM
+- [x] At least one ReactFlow graph container (`[data-testid="rf__wrapper"]` or equivalent) is present (graph rendered)
+- [x] Clicking a graph's "expand" or "view" button opens the `GraphModal` overlay
+- [x] The `GraphModal` close button dismisses the overlay
 
 **General:**
-- [ ] All tests in both files pass with `npx playwright test` locally
-- [ ] No `page.waitForTimeout()` calls
-- [ ] All tests complete in under 60 seconds total
-- [ ] `npx playwright test` (running all E2E files including ticket 011's) completes without flakiness on two consecutive runs
+- [x] All tests in both files pass with `npx playwright test` locally
+- [x] No `page.waitForTimeout()` calls
+- [x] All tests complete in under 60 seconds total
+- [x] `npx playwright test` (running all E2E files including ticket 011's) completes without flakiness on two consecutive runs
 
 ## Out of Scope
 

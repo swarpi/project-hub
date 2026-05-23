@@ -376,6 +376,7 @@ export function Canvas(): React.ReactElement {
 
 	return (
 		<div
+			data-testid="canvas-drop-target"
 			style={{ width: "100%", height: "100%", position: "relative" }}
 			onDragOver={onDragOver}
 			onDrop={onDrop}

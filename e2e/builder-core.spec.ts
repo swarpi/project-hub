@@ -123,7 +123,10 @@ test.describe.serial("Builder core flows", () => {
   test("clicking a component node shows Component heading in properties panel", async ({
     page,
   }) => {
-    // Add a component first
+    // Before adding any component: properties panel shows the Diagram section
+    await expect(page.getByRole("heading", { name: "Diagram" })).toBeVisible();
+
+    // Add a component (double-click auto-selects it)
     await page.locator(".react-flow__pane").dblclick();
 
     const componentNode = page
@@ -131,13 +134,7 @@ test.describe.serial("Builder core flows", () => {
       .first();
     await expect(componentNode).toBeVisible();
 
-    // Before selection: properties panel shows the Diagram section
-    await expect(page.getByRole("heading", { name: "Diagram" })).toBeVisible();
-
-    // Select the component
-    await componentNode.click();
-
-    // After selection: Component section heading appears
+    // After auto-selection: Component section heading appears
     await expect(
       page.getByRole("heading", { name: "Component" }),
     ).toBeVisible();
@@ -188,13 +185,18 @@ test.describe.serial("Builder core flows", () => {
     await expect(reactFlowCanvas(page)).toBeVisible();
 
     // Switch to YAML tab
-    await page.getByRole("button", { name: "YAML" }).click();
-    // YAML tab button should still be visible (panel is shown)
-    await expect(page.getByRole("button", { name: "YAML" })).toBeVisible();
+    await page
+      .getByRole("button", { name: "YAML", exact: true })
+      .click();
+    await expect(
+      page.getByRole("button", { name: "YAML", exact: true }),
+    ).toBeVisible();
 
     // Switch to AI tab
-    await page.getByRole("button", { name: "AI" }).click();
-    await expect(page.getByRole("button", { name: "AI" })).toBeVisible();
+    await page.getByRole("button", { name: "AI", exact: true }).click();
+    await expect(
+      page.getByRole("button", { name: "AI", exact: true }),
+    ).toBeVisible();
 
     // Return to Properties tab
     await page.getByRole("button", { name: "Properties" }).click();
@@ -211,8 +213,8 @@ test.describe.serial("Builder core flows", () => {
     await page.goto("/");
     await page.waitForLoadState("networkidle");
 
-    // Hub renders sections — wait for at least one visible section element
-    await expect(page.locator("section").first()).toBeVisible();
+    // Hub renders a footer (builder does not)
+    await expect(page.locator("footer")).toBeVisible();
 
     await expect(page).toHaveScreenshot("hub-dashboard.png", {
       maxDiffPixelRatio: 0.01,
@@ -296,7 +298,7 @@ test.describe.serial("Builder core flows", () => {
     await page.getByRole("button", { name: "Auto-layout" }).click();
 
     // Fit view normalises the viewport for consistent screenshots
-    await page.getByTitle("Fit view").click();
+    await page.getByTitle("Fit view", { exact: true }).click();
 
     // Allow layout animation to settle
     await page.locator(".react-flow__renderer").waitFor({ state: "visible" });
@@ -304,5 +306,200 @@ test.describe.serial("Builder core flows", () => {
     await expect(page).toHaveScreenshot("builder-multi-component.png", {
       maxDiffPixelRatio: 0.01,
     });
+  });
+
+  // -------------------------------------------------------------------------
+  // 12. Add component via drag-and-drop from palette to canvas
+  // -------------------------------------------------------------------------
+  test("dragging a palette zone card to the canvas adds a component", async ({
+    page,
+  }) => {
+    await expect(reactFlowCanvas(page)).toBeVisible();
+
+    const componentsBefore = await page
+      .locator(".react-flow__node-archComponent")
+      .count();
+
+    const paletteCard = page
+      .locator('[data-testid="palette-zone-card"]')
+      .first();
+    await expect(paletteCard).toBeVisible();
+
+    const canvasWrapper = page.locator('[data-testid="canvas-drop-target"]');
+    await expect(canvasWrapper).toBeVisible();
+
+    const cardBox = await paletteCard.boundingBox();
+    const canvasBox = await canvasWrapper.boundingBox();
+
+    await page.evaluate(
+      ({ cardSel, canvasSel, cardCenter, dropPoint }) => {
+        const card = document.querySelector(cardSel) as HTMLElement;
+        const canvas = document.querySelector(canvasSel) as HTMLElement;
+        if (!card || !canvas) throw new Error("Elements not found");
+
+        const zoneId = card.getAttribute("data-zone-id") ?? "";
+        const dt = new DataTransfer();
+        dt.setData("application/reactflow-tier", zoneId);
+
+        card.dispatchEvent(
+          new DragEvent("dragstart", {
+            bubbles: true,
+            dataTransfer: dt,
+            clientX: cardCenter.x,
+            clientY: cardCenter.y,
+          }),
+        );
+
+        canvas.dispatchEvent(
+          new DragEvent("dragover", {
+            bubbles: true,
+            cancelable: true,
+            dataTransfer: dt,
+            clientX: dropPoint.x,
+            clientY: dropPoint.y,
+          }),
+        );
+
+        canvas.dispatchEvent(
+          new DragEvent("drop", {
+            bubbles: true,
+            cancelable: true,
+            dataTransfer: dt,
+            clientX: dropPoint.x,
+            clientY: dropPoint.y,
+          }),
+        );
+
+        card.dispatchEvent(
+          new DragEvent("dragend", { bubbles: true, dataTransfer: dt }),
+        );
+      },
+      {
+        cardSel: '[data-testid="palette-zone-card"]',
+        canvasSel: '[data-testid="canvas-drop-target"]',
+        cardCenter: {
+          x: cardBox!.x + cardBox!.width / 2,
+          y: cardBox!.y + cardBox!.height / 2,
+        },
+        dropPoint: {
+          x: canvasBox!.x + canvasBox!.width / 2,
+          y: canvasBox!.y + canvasBox!.height / 2,
+        },
+      },
+    );
+
+    await expect(page.locator(".react-flow__node-archComponent")).toHaveCount(
+      componentsBefore + 1,
+    );
+  });
+
+  // -------------------------------------------------------------------------
+  // 13. Create a connection by dragging between handles
+  // -------------------------------------------------------------------------
+  test("dragging from a source handle to a target node creates an edge", async ({
+    page,
+  }) => {
+    await expect(reactFlowCanvas(page)).toBeVisible();
+
+    // Add two components in different zones
+    const zoneCards = page.locator('[data-testid="palette-zone-card"]');
+    await zoneCards.first().dblclick();
+    await zoneCards.nth(1).dblclick();
+
+    await expect(page.locator(".react-flow__node-archComponent")).toHaveCount(2);
+
+    // Auto-layout to separate nodes spatially, then fit view
+    await page.getByRole("button", { name: "Auto-layout" }).click();
+    await page.getByTitle("Fit view", { exact: true }).click();
+
+    // Wait for layout to settle — nodes must be in final positions
+    const sourceNode = page
+      .locator(".react-flow__node-archComponent")
+      .first();
+    const targetNode = page
+      .locator(".react-flow__node-archComponent")
+      .nth(1);
+    await expect(sourceNode).toBeVisible();
+    await expect(targetNode).toBeVisible();
+
+    const edgesBefore = await page.locator(".react-flow__edge").count();
+
+    // Hover source node to reveal source handles
+    await sourceNode.hover();
+
+    const sourceHandle = sourceNode.locator(
+      '.react-flow__handle.source[data-handleid="bottom-src"]',
+    );
+    await sourceHandle.waitFor({ state: "attached" });
+
+    // Read positions after layout is stable
+    const handleBox = await sourceHandle.boundingBox();
+    const targetBox = await targetNode.boundingBox();
+
+    const sx = handleBox!.x + handleBox!.width / 2;
+    const sy = handleBox!.y + handleBox!.height / 2;
+    const tx = targetBox!.x + targetBox!.width / 2;
+    const ty = targetBox!.y + targetBox!.height / 2;
+
+    // Get handle element reference and dispatch pointerdown directly
+    const handleEl = await sourceHandle.elementHandle();
+    await handleEl!.evaluate(
+      (el, { hx, hy }) => {
+        el.dispatchEvent(
+          new PointerEvent("pointerdown", {
+            bubbles: true,
+            cancelable: true,
+            clientX: hx,
+            clientY: hy,
+            button: 0,
+            pointerId: 1,
+            pointerType: "mouse",
+            composed: true,
+          }),
+        );
+        el.dispatchEvent(
+          new MouseEvent("mousedown", {
+            bubbles: true,
+            cancelable: true,
+            clientX: hx,
+            clientY: hy,
+            button: 0,
+          }),
+        );
+      },
+      { hx: sx, hy: sy },
+    );
+
+    // Continue the drag with Playwright's mouse to the target
+    await page.mouse.move(tx, ty, { steps: 20 });
+    await page.mouse.up();
+
+    await expect(page.locator(".react-flow__edge")).toHaveCount(
+      edgesBefore + 1,
+    );
+  });
+
+  // -------------------------------------------------------------------------
+  // 14. Browser back button returns from builder to hub
+  // -------------------------------------------------------------------------
+  test("browser back button returns to hub from builder", async ({ page }) => {
+    // Start at hub
+    await page.goto("/");
+    await page.waitForLoadState("networkidle");
+    await expect(page.locator("footer")).toBeVisible();
+
+    // Navigate to builder
+    const builderLink = page.getByRole("link", { name: "Builder" });
+    if (await builderLink.isVisible()) {
+      await builderLink.click();
+    } else {
+      await page.goto("/#/builder");
+    }
+    await page.waitForLoadState("networkidle");
+    await expect(reactFlowCanvas(page)).toBeVisible();
+
+    // Go back — should return to hub
+    await page.goBack();
+    await expect(page.locator("footer")).toBeVisible();
   });
 });

@@ -11,9 +11,9 @@ const mockSetViewport = vi.fn();
 const mockFitView = vi.fn();
 
 vi.mock("@xyflow/react", async () => {
-  const actual = await vi.importActual("@xyflow/react");
+  const mod = await vi.importActual<typeof import("@xyflow/react")>("@xyflow/react");
   return {
-    ...actual,
+    ...mod,
     useReactFlow: () => ({
       getViewport: () => ({ x: 0, y: 0, zoom: 1 }),
       zoomIn: mockZoomIn,

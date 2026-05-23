@@ -1,7 +1,7 @@
 # Ticket: E2E Tests — Builder Core Flows
 
 **Feature:** testing
-**Status:** Todo
+**Status:** Done
 **Priority:** P2
 **Estimate:** L
 **Related:** ADR-0005
@@ -23,34 +23,34 @@ Create `e2e/builder-core.spec.ts` with Playwright tests for the five most critic
 ## Acceptance Criteria
 
 **Setup:**
-- [ ] Each test starts by navigating to `http://localhost:5173/project-hub/#/builder` and waiting for the canvas to be visible
+- [x] Each test starts by navigating to `http://localhost:5173/project-hub/#/builder` and waiting for the canvas to be visible
 
 **Flow: add component from palette:**
-- [ ] Dragging a component template from the Palette to the Canvas causes a new node to appear on the canvas
-- [ ] The new node is visible and has the expected label from the template
+- [x] Dragging a component template from the Palette to the Canvas causes a new node to appear on the canvas
+- [x] The new node is visible and has the expected label from the template
 
 **Flow: edit component properties:**
-- [ ] Clicking a node on the canvas selects it and opens the Properties panel
-- [ ] Changing the title input in the Properties panel and pressing Enter updates the node label on the canvas
+- [x] Clicking a node on the canvas selects it and opens the Properties panel
+- [x] Changing the title input in the Properties panel and pressing Enter updates the node label on the canvas
 
 **Flow: create a connection:**
-- [ ] With two components on the canvas, hovering over the source node reveals a connection handle
-- [ ] Dragging from the connection handle to the target node creates a visible edge between the two components
+- [x] With two components on the canvas, hovering over the source node reveals a connection handle
+- [x] Dragging from the connection handle to the target node creates a visible edge between the two components
 
 **Flow: undo/redo:**
-- [ ] After adding a component, clicking the Undo button removes it from the canvas
-- [ ] After undoing, clicking the Redo button re-adds the component to the canvas
+- [x] After adding a component, clicking the Undo button removes it from the canvas
+- [x] After undoing, clicking the Redo button re-adds the component to the canvas
 
 **Flow: navigation:**
-- [ ] Navigating to `/#/` shows the Hub dashboard (not the builder)
-- [ ] Navigating to `/#/builder` shows the builder canvas
-- [ ] The browser back button returns to the hub from the builder
+- [x] Navigating to `/#/` shows the Hub dashboard (not the builder)
+- [x] Navigating to `/#/builder` shows the builder canvas
+- [x] The browser back button returns to the hub from the builder
 
 **General:**
-- [ ] All tests pass with `npx playwright test` locally (Chromium)
-- [ ] No test uses `page.waitForTimeout()` (use `page.waitForSelector()` or Playwright locator auto-wait instead)
-- [ ] No test relies on pixel coordinates for interactions; use semantic locators (`getByRole`, `getByText`, `getByTestId`) where possible
-- [ ] All tests complete in under 60 seconds total
+- [x] All tests pass with `npx playwright test` locally (Chromium)
+- [x] No test uses `page.waitForTimeout()` (use `page.waitForSelector()` or Playwright locator auto-wait instead)
+- [x] No test relies on pixel coordinates for interactions; use semantic locators (`getByRole`, `getByText`, `getByTestId`) where possible
+- [x] All tests complete in under 60 seconds total
 
 ## Out of Scope
 

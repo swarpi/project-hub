@@ -4,19 +4,7 @@ import { useBuilderStore } from "../store/builder-store";
 import { Palette } from "./Palette";
 import { ReactFlowWrapper } from "@/test/react-flow-wrapper";
 
-vi.mock("@xyflow/react", async () => {
-  const actual = await vi.importActual("@xyflow/react");
-  return {
-    ...actual,
-    useReactFlow: () => ({
-      getViewport: () => ({ x: 0, y: 0, zoom: 1 }),
-      zoomIn: vi.fn(),
-      zoomOut: vi.fn(),
-      setViewport: vi.fn(),
-      fitView: vi.fn(),
-    }),
-  };
-});
+
 
 function renderPalette() {
   return render(<Palette />, { wrapper: ReactFlowWrapper });

@@ -1,7 +1,7 @@
 # Ticket: Hub Component Integration Tests
 
 **Feature:** testing
-**Status:** Todo
+**Status:** Done
 **Priority:** P1
 **Estimate:** M
 **Related:** ADR-0005
@@ -66,8 +66,10 @@ If Hub section components (`ArchitectureGraph`, `WorkflowGraph`, `OrchestrationG
 
 ## Implementation Plan
 
-_To be filled in by the executor before starting work._
-
-1. Step 1
-2. Step 2
-3. Step 3
+1. Add `window.matchMedia` mock to `src/test/setup.ts` (guarded for node environment)
+2. Create `src/components/layout/ThemeToggle.test.tsx` — 8 tests
+3. Create `src/components/ui/ProjectCard.test.tsx` — 15 tests
+4. Create `src/components/layout/NavBar.test.tsx` — 12 tests
+5. Create `src/builder/components/Tooltip.test.tsx` — 9 tests (fake timers)
+6. Create `src/components/ui/GraphModal.test.tsx` — 7 tests (mocked graph children)
+7. Create `src/builder/BuilderPage.test.tsx` — 12 tests (mocked Canvas)
