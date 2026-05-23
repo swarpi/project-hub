@@ -34,6 +34,9 @@ _Completed tickets. Move here when done, newest first._
 
 | Ticket | Feature | Completed |
 |--------|---------|-----------|
+| [003 — Tests for mergeDiagram and Update Diagram UI](ai-update/003-merge-diagram-tests.md) | ai-update | 2026-05-23 |
+| [002 — "Update Diagram" button and system prompt changes](ai-update/002-update-diagram-ui-and-prompts.md) | ai-update | 2026-05-23 |
+| [001 — mergeDiagram store action](ai-update/001-merge-diagram-store-action.md) | ai-update | 2026-05-23 |
 | [013 — CI test gate integration](testing/013-ci-test-gate.md) | testing | 2026-05-23 |
 | [012 — E2E tests: YAML round-trip, zone management, hub dashboard](testing/012-e2e-yaml-zones-hub.md) | testing | 2026-05-23 |
 | [011 — E2E tests: builder core flows](testing/011-e2e-builder-core-flows.md) | testing | 2026-05-23 |

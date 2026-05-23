@@ -65,6 +65,12 @@ interface DiagramActions {
 			zones?: Zone[];
 		},
 	) => void;
+	mergeDiagram: (
+		diagram: DiagramModel & {
+			positions: Record<string, { x: number; y: number }>;
+			zones?: Zone[];
+		},
+	) => void;
 }
 
 interface UiActions {
@@ -285,6 +291,75 @@ export const useBuilderStore = create<BuilderState>()(
 						layoutVersion: 3,
 						selectedNodeId: null,
 						selectedEdgeId: null,
+					}),
+
+				mergeDiagram: (diagram) =>
+					set((state) => {
+						const currentMap = new Map(
+							state.components.map((c) => [c.id, c]),
+						);
+
+						const components = diagram.components.map((incoming) => {
+							const existing = currentMap.get(incoming.id);
+							return existing
+								? { ...existing, ...incoming }
+								: incoming;
+						});
+
+						const positions: Record<
+							string,
+							{ x: number; y: number }
+						> = {};
+						for (const comp of components) {
+							const existing = currentMap.get(comp.id);
+							if (existing) {
+								if (comp.tier !== existing.tier) {
+									positions[comp.id] = {
+										x: ZONE_PADDING.left,
+										y: ZONE_PADDING.top,
+									};
+								} else {
+									positions[comp.id] =
+										state.positions[comp.id] ??
+										diagram.positions[comp.id] ?? {
+											x: ZONE_PADDING.left,
+											y: ZONE_PADDING.top,
+										};
+								}
+							} else {
+								positions[comp.id] =
+									diagram.positions[comp.id] ?? {
+										x: ZONE_PADDING.left,
+										y: ZONE_PADDING.top,
+									};
+							}
+						}
+
+						const incomingZones =
+							diagram.zones ?? DEFAULT_ZONES;
+						const incomingZoneIds = new Set(
+							incomingZones.map((z) => z.id),
+						);
+						const retainedTiers = new Set(
+							components.map((c) => c.tier),
+						);
+						const preservedZones = state.zones.filter(
+							(z) =>
+								!incomingZoneIds.has(z.id) &&
+								retainedTiers.has(z.id),
+						);
+
+						return {
+							name: diagram.name,
+							description: diagram.description,
+							zones: [...incomingZones, ...preservedZones],
+							components,
+							connections: diagram.connections,
+							positions,
+							layoutVersion: 3,
+							selectedNodeId: null,
+							selectedEdgeId: null,
+						};
 					}),
 
 				selectNode: (id) =>

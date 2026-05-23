@@ -56,6 +56,14 @@ You can define additional custom zones (e.g. zone-infrastructure, zone-external,
 
 Always include a brief explanation before or after the YAML block. Use realistic component ids (kebab-case), meaningful descriptions, and appropriate technologies.
 
+When the user asks you to modify, update, add to, or change the existing diagram:
+- Return a complete YAML document that includes ALL components and connections, not just the changes.
+- Preserve the IDs of existing components that are unchanged. Do not rename IDs unnecessarily.
+- For new components, use descriptive kebab-case IDs that do not collide with existing ones.
+- If the user asks to remove a component, omit it from the YAML entirely.
+- If the user asks to change a property (e.g., protocol, technology), update that field on the relevant component or connection.
+- Always include a brief summary of what changed: what was added, removed, or modified.
+
 The user's current diagram (auto-updated as they edit):
 
 \`\`\`yaml
@@ -220,6 +228,14 @@ connections:
 
 Always include a brief explanation before or after the YAML block. List any assumptions you made.
 
+When the user asks you to modify, update, add to, or change the existing diagram:
+- Return a complete YAML document that includes ALL components and connections, not just the changes.
+- Preserve the IDs of existing components that are unchanged. Do not rename IDs unnecessarily.
+- For new components, use descriptive kebab-case IDs that do not collide with existing ones.
+- If the user asks to remove a component, omit it from the YAML entirely.
+- If the user asks to change a property (e.g., protocol, technology), update that field on the relevant component or connection.
+- Always include a brief summary of what changed: what was added, removed, or modified.
+
 The user's current diagram (may be empty if starting fresh):
 
 \`\`\`yaml
@@ -235,6 +251,7 @@ export function AIPanel(): React.ReactElement {
 	const components = useBuilderStore((s) => s.components);
 	const connections = useBuilderStore((s) => s.connections);
 	const loadDiagram = useBuilderStore((s) => s.loadDiagram);
+	const mergeDiagram = useBuilderStore((s) => s.mergeDiagram);
 	const zones = useBuilderStore((s) => s.zones);
 
 	const [mode, setMode] = useState<AiMode>("freeform");
@@ -328,6 +345,24 @@ export function AIPanel(): React.ReactElement {
 			setAppliedBlocks((prev) => new Set(prev).add(yamlStr));
 		},
 		[loadDiagram, zones],
+	);
+
+	const mergeYaml = useCallback(
+		(yamlStr: string) => {
+			const { diagram, errors } = yamlToDiagram(yamlStr);
+			if (errors.length > 0 && diagram.components.length === 0) {
+				setMessages((prev) => [
+					...prev,
+					{ role: "error", content: `Could not parse diagram: ${errors.join(", ")}` },
+				]);
+				return;
+			}
+			const diagramZones = diagram.zones && diagram.zones.length > 0 ? diagram.zones : zones;
+			const layoutResult = computeTierLayout(diagram.components, diagramZones);
+			mergeDiagram({ ...diagram, zones: diagramZones, positions: layoutResult.components });
+			setAppliedBlocks((prev) => new Set(prev).add(yamlStr));
+		},
+		[mergeDiagram, zones],
 	);
 
 	const onReview = useCallback(() => {
@@ -471,6 +506,8 @@ export function AIPanel(): React.ReactElement {
 							<AssistantMessage
 								content={mode === "guided" ? stripConfidenceMarker(msg.content) : msg.content}
 								onApply={applyYaml}
+								onMerge={mergeYaml}
+								hasComponents={hasComponents}
 								appliedBlocks={appliedBlocks}
 							/>
 						)}
@@ -609,10 +646,14 @@ export function AIPanel(): React.ReactElement {
 const AssistantMessage = memo(function AssistantMessage({
 	content,
 	onApply,
+	onMerge,
+	hasComponents,
 	appliedBlocks,
 }: {
 	content: string;
 	onApply: (yaml: string) => void;
+	onMerge: (yaml: string) => void;
+	hasComponents: boolean;
 	appliedBlocks: Set<string>;
 }): React.ReactElement {
 	const yamlBlocks = extractYamlBlocks(content);
@@ -642,6 +683,8 @@ const AssistantMessage = memo(function AssistantMessage({
 					yaml={block}
 					applied={applied}
 					onApply={() => onApply(block)}
+					onMerge={() => onMerge(block)}
+					hasComponents={hasComponents}
 				/>,
 			);
 		}
@@ -654,14 +697,19 @@ const YamlBlock = memo(function YamlBlock({
 	yaml,
 	applied,
 	onApply,
+	onMerge,
+	hasComponents,
 }: {
 	yaml: string;
 	applied: boolean;
 	onApply: () => void;
+	onMerge: () => void;
+	hasComponents: boolean;
 }): React.ReactElement {
 	const [collapsed, setCollapsed] = useState(true);
 	const lines = yaml.split("\n");
 	const preview = lines.slice(0, 4).join("\n") + (lines.length > 4 ? "\n..." : "");
+	const mergeDisabled = applied || !hasComponents;
 
 	return (
 		<div style={YAML_BLOCK_STYLE}>
@@ -688,30 +736,46 @@ const YamlBlock = memo(function YamlBlock({
 						YAML Diagram
 					</span>
 				</button>
-				<button
-					style={{
-						...APPLY_BTN,
-						...(applied ? APPLIED_BTN : {}),
-					}}
-					onClick={onApply}
-					disabled={applied}
-				>
-					{applied ? (
-						<>
-							<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-								<polyline points="20 6 9 17 4 12" />
-							</svg>
-							Applied
-						</>
-					) : (
-						<>
-							<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-								<path d="M12 5v14M5 12h14" />
-							</svg>
-							Apply to Canvas
-						</>
-					)}
-				</button>
+				<div style={{ display: "flex", gap: 4 }}>
+					<button
+						style={{
+							...UPDATE_BTN,
+							...(mergeDisabled ? { opacity: 0.4, cursor: "default" } : {}),
+						}}
+						onClick={onMerge}
+						disabled={mergeDisabled}
+						title={!hasComponents ? "No existing diagram to update" : undefined}
+					>
+						<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+							<path d="M17 3a2.85 2.85 0 0 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
+						</svg>
+						Update Diagram
+					</button>
+					<button
+						style={{
+							...APPLY_BTN,
+							...(applied ? APPLIED_BTN : {}),
+						}}
+						onClick={onApply}
+						disabled={applied}
+					>
+						{applied ? (
+							<>
+								<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+									<polyline points="20 6 9 17 4 12" />
+								</svg>
+								Applied
+							</>
+						) : (
+							<>
+								<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+									<path d="M12 5v14M5 12h14" />
+								</svg>
+								Apply to Canvas
+							</>
+						)}
+					</button>
+				</div>
 			</div>
 			<pre style={YAML_CODE_STYLE}>
 				{collapsed ? preview : yaml}
@@ -1046,6 +1110,22 @@ const APPLY_BTN: CSSProperties = {
 	background: "var(--wf-accent)",
 	color: "white",
 	border: "none",
+	borderRadius: 4,
+	cursor: "pointer",
+	fontFamily: "'Geist', ui-sans-serif, system-ui, sans-serif",
+	fontSize: 10,
+	fontWeight: 600,
+	transition: "opacity 0.15s ease",
+};
+
+const UPDATE_BTN: CSSProperties = {
+	display: "flex",
+	alignItems: "center",
+	gap: 4,
+	padding: "3px 8px",
+	background: "transparent",
+	color: "var(--wf-accent)",
+	border: "1px solid var(--wf-accent)",
 	borderRadius: 4,
 	cursor: "pointer",
 	fontFamily: "'Geist', ui-sans-serif, system-ui, sans-serif",

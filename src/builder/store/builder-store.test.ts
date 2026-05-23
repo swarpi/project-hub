@@ -3,7 +3,7 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 import { useBuilderStore, createInitialDiagram } from "./builder-store";
 import type { ArchComponent, ArchConnection, Zone } from "@/lib/types";
 import type { DiagramModel } from "../lib/yaml-export";
-import { DEFAULT_ZONES } from "../lib/zone-layout";
+import { DEFAULT_ZONES, ZONE_PADDING } from "../lib/zone-layout";
 
 // jsdom (loaded via the @vitest-environment jsdom docblock above) provides a
 // real localStorage implementation, so the zustand persist middleware works
@@ -813,5 +813,202 @@ describe("updateComponent tier change", () => {
 		// Position should still be the original
 		const pos = useBuilderStore.getState().positions["same-tier-comp"];
 		expect(pos).toEqual({ x: 300, y: 400 });
+	});
+});
+
+// ===========================================================================
+// DiagramSlice — mergeDiagram
+// ===========================================================================
+
+describe("DiagramSlice — mergeDiagram", () => {
+	it("preserves position for existing component", () => {
+		const comp = makeComponent({ id: "web-app", tier: "zone-client" });
+		useBuilderStore.setState({
+			components: [comp],
+			positions: { "web-app": { x: 100, y: 200 } },
+		});
+
+		useBuilderStore.getState().mergeDiagram(
+			makeDiagram({
+				components: [{ ...comp, title: "Updated App" }],
+				positions: { "web-app": { x: 0, y: 0 } },
+			}),
+		);
+
+		const state = useBuilderStore.getState();
+		expect(state.positions["web-app"]).toEqual({ x: 100, y: 200 });
+		expect(state.components[0].title).toBe("Updated App");
+	});
+
+	it("new component uses computed position from incoming", () => {
+		useBuilderStore.setState({ components: [], positions: {} });
+
+		const newComp = makeComponent({ id: "redis-cache", tier: "zone-data" });
+		useBuilderStore.getState().mergeDiagram(
+			makeDiagram({
+				components: [newComp],
+				positions: { "redis-cache": { x: 50, y: 80 } },
+			}),
+		);
+
+		expect(useBuilderStore.getState().positions["redis-cache"]).toEqual({ x: 50, y: 80 });
+	});
+
+	it("removed component is dropped from components and positions", () => {
+		const kept = makeComponent({ id: "kept-service", tier: "zone-service" });
+		const removed = makeComponent({ id: "old-service", tier: "zone-service" });
+		useBuilderStore.setState({
+			components: [kept, removed],
+			positions: {
+				"kept-service": { x: 10, y: 10 },
+				"old-service": { x: 20, y: 20 },
+			},
+		});
+
+		useBuilderStore.getState().mergeDiagram(
+			makeDiagram({
+				components: [kept],
+				positions: { "kept-service": { x: 0, y: 0 } },
+			}),
+		);
+
+		const state = useBuilderStore.getState();
+		expect(state.components.find((c) => c.id === "old-service")).toBeUndefined();
+		expect(state.positions["old-service"]).toBeUndefined();
+		expect(state.components).toHaveLength(1);
+	});
+
+	it("connections fully replaced", () => {
+		const compA = makeComponent({ id: "a", tier: "zone-service" });
+		const compB = makeComponent({ id: "b", tier: "zone-data" });
+		const oldConn = makeConnection({ from: "a", to: "b", label: "old" });
+		useBuilderStore.setState({
+			components: [compA, compB],
+			connections: [oldConn],
+			positions: { a: { x: 0, y: 0 }, b: { x: 100, y: 100 } },
+		});
+
+		const newConn = makeConnection({ from: "b", to: "a", label: "new", protocol: "gRPC" });
+		useBuilderStore.getState().mergeDiagram(
+			makeDiagram({
+				components: [compA, compB],
+				connections: [newConn],
+				positions: { a: { x: 0, y: 0 }, b: { x: 0, y: 0 } },
+			}),
+		);
+
+		const state = useBuilderStore.getState();
+		expect(state.connections).toEqual([newConn]);
+	});
+
+	it("tier change resets position to ZONE_PADDING defaults", () => {
+		const comp = makeComponent({ id: "api-server", tier: "zone-service" });
+		useBuilderStore.setState({
+			components: [comp],
+			positions: { "api-server": { x: 300, y: 400 } },
+		});
+
+		useBuilderStore.getState().mergeDiagram(
+			makeDiagram({
+				components: [{ ...comp, tier: "zone-data" }],
+				positions: { "api-server": { x: 999, y: 999 } },
+			}),
+		);
+
+		expect(useBuilderStore.getState().positions["api-server"]).toEqual({
+			x: ZONE_PADDING.left,
+			y: ZONE_PADDING.top,
+		});
+	});
+
+	it("updates name and description from incoming", () => {
+		useBuilderStore.setState({ name: "Old Name", description: "Old desc" });
+
+		useBuilderStore.getState().mergeDiagram(
+			makeDiagram({ name: "New Name", description: "New desc" }),
+		);
+
+		const state = useBuilderStore.getState();
+		expect(state.name).toBe("New Name");
+		expect(state.description).toBe("New desc");
+	});
+
+	it("connections referencing removed components are not in result", () => {
+		const db = makeComponent({ id: "db", tier: "zone-data" });
+		const old = makeComponent({ id: "old-service", tier: "zone-service" });
+		useBuilderStore.setState({
+			components: [db, old],
+			connections: [
+				makeConnection({ from: "old-service", to: "db" }),
+				makeConnection({ from: "db", to: "old-service" }),
+			],
+			positions: { db: { x: 0, y: 0 }, "old-service": { x: 100, y: 100 } },
+		});
+
+		useBuilderStore.getState().mergeDiagram(
+			makeDiagram({
+				components: [db],
+				connections: [],
+				positions: { db: { x: 0, y: 0 } },
+			}),
+		);
+
+		expect(useBuilderStore.getState().connections).toEqual([]);
+	});
+
+	it("single undo step after mergeDiagram", () => {
+		const comp = makeComponent({ id: "svc", tier: "zone-service" });
+		useBuilderStore.setState({
+			components: [comp],
+			positions: { svc: { x: 0, y: 0 } },
+		});
+		const pastBefore = useBuilderStore.temporal.getState().pastStates.length;
+
+		useBuilderStore.getState().mergeDiagram(
+			makeDiagram({
+				components: [{ ...comp, title: "Merged" }],
+				positions: { svc: { x: 0, y: 0 } },
+			}),
+		);
+
+		const pastAfter = useBuilderStore.temporal.getState().pastStates.length;
+		expect(pastAfter - pastBefore).toBe(1);
+	});
+
+	it("defensive zone fallback preserves zone referenced by retained component", () => {
+		const customZone = makeZone({ id: "zone-custom", name: "Custom" });
+		const comp = makeComponent({ id: "custom-svc", tier: "zone-custom" });
+		useBuilderStore.setState({
+			zones: [...DEFAULT_ZONES, customZone],
+			components: [comp],
+			positions: { "custom-svc": { x: 50, y: 50 } },
+		});
+
+		useBuilderStore.getState().mergeDiagram(
+			makeDiagram({
+				zones: DEFAULT_ZONES,
+				components: [comp],
+				positions: { "custom-svc": { x: 0, y: 0 } },
+			}),
+		);
+
+		const state = useBuilderStore.getState();
+		expect(state.zones.find((z) => z.id === "zone-custom")).toBeDefined();
+	});
+
+	it("empty incoming components clears all existing components", () => {
+		const comp = makeComponent({ id: "will-go", tier: "zone-service" });
+		useBuilderStore.setState({
+			components: [comp],
+			positions: { "will-go": { x: 10, y: 10 } },
+		});
+
+		useBuilderStore.getState().mergeDiagram(
+			makeDiagram({ components: [], connections: [], positions: {} }),
+		);
+
+		const state = useBuilderStore.getState();
+		expect(state.components).toHaveLength(0);
+		expect(Object.keys(state.positions)).toHaveLength(0);
 	});
 });
