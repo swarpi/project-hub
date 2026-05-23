@@ -28,6 +28,10 @@ jobs:
           node-version: '22'
           cache: 'npm'
       - run: npm ci
+      - run: npx playwright install chromium --with-deps
+      - run: npm run lint
+      - run: npm run test:coverage
+      - run: npm run test:e2e
       - run: npm run build
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

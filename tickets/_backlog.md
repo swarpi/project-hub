@@ -16,13 +16,6 @@ _Tickets ready to be picked up in the next cycle._
 
 | Ticket | Feature | Priority | Estimate |
 |--------|---------|----------|----------|
-| [007 — Builder panel component integration tests](testing/007-builder-panel-component-tests.md) | testing | P1 | L |
-| [008 — Hub component integration tests](testing/008-hub-component-tests.md) | testing | P1 | M |
-| [009 — AIPanel and LearnPanel integration tests](testing/009-ai-panel-learn-panel-tests.md) | testing | P1 | M |
-| [010 — Coverage gap closure and threshold validation](testing/010-coverage-gap-closure.md) | testing | P1 | S |
-| [011 — E2E tests: builder core flows](testing/011-e2e-builder-core-flows.md) | testing | P2 | L |
-| [012 — E2E tests: YAML round-trip, zone management, hub dashboard](testing/012-e2e-yaml-zones-hub.md) | testing | P2 | M |
-| [013 — CI test gate integration](testing/013-ci-test-gate.md) | testing | P2 | XS |
 | [005 — Visibility pattern and polish](learn-tab/005-visibility-pattern-and-polish.md) | learn-tab | P2 | S |
 | [007 — Auto-layout and YAML export zone-aware updates](flexible-zones/007-layout-and-yaml-export-update.md) | flexible-zones | P1 | S |
 | [008 — Tier icons: LayerIcon fallback for custom zones](flexible-zones/008-tier-icons-layer-icon.md) | flexible-zones | P2 | XS |
@@ -41,6 +34,13 @@ _Completed tickets. Move here when done, newest first._
 
 | Ticket | Feature | Completed |
 |--------|---------|-----------|
+| [013 — CI test gate integration](testing/013-ci-test-gate.md) | testing | 2026-05-23 |
+| [012 — E2E tests: YAML round-trip, zone management, hub dashboard](testing/012-e2e-yaml-zones-hub.md) | testing | 2026-05-23 |
+| [011 — E2E tests: builder core flows](testing/011-e2e-builder-core-flows.md) | testing | 2026-05-23 |
+| [010 — Coverage gap closure and threshold validation](testing/010-coverage-gap-closure.md) | testing | 2026-05-22 |
+| [009 — AIPanel and LearnPanel integration tests](testing/009-ai-panel-learn-panel-tests.md) | testing | 2026-05-22 |
+| [008 — Hub component integration tests](testing/008-hub-component-tests.md) | testing | 2026-05-22 |
+| [007 — Builder panel component integration tests](testing/007-builder-panel-component-tests.md) | testing | 2026-05-22 |
 | [015 — E2E: YAML round-trip, zones, hub with visual regression](testing/015-e2e-yaml-zones-hub-visual.md) | testing | 2026-05-22 |
 | [014 — E2E: builder core flows with visual regression](testing/014-e2e-builder-core-visual.md) | testing | 2026-05-22 |
 | [006 — Network layer unit tests](testing/006-network-layer-tests.md) | testing | 2026-05-22 |

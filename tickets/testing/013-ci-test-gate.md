@@ -1,7 +1,7 @@
 # Ticket: CI Test Gate Integration
 
 **Feature:** testing
-**Status:** Todo
+**Status:** Done
 **Priority:** P2
 **Estimate:** XS
 **Related:** ADR-0005
@@ -62,8 +62,6 @@ This is a one-file change. Verify by opening a PR on a branch and watching the A
 
 ## Implementation Plan
 
-_To be filled in by the executor before starting work._
-
-1. Step 1
-2. Step 2
-3. Step 3
+1. Insert `npx playwright install chromium --with-deps`, `npm run lint`, `npm run test:coverage`, and `npm run test:e2e` steps between `npm ci` and `npm run build` in the `build` job of `.github/workflows/deploy.yml`
+2. Validate YAML syntax
+3. Verify all existing steps (triggers, permissions, GITHUB_TOKEN env, upload-pages-artifact, deploy job) remain unchanged
