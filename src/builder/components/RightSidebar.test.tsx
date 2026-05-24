@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, fireEvent } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useBuilderStore } from "../store/builder-store";
 import { RightSidebar } from "./RightSidebar";
@@ -9,6 +9,13 @@ function renderSidebar() {
 }
 
 describe("RightSidebar", () => {
+  beforeEach(() => {
+    useBuilderStore.setState({
+      sidebarWidth: 268,
+      activePanel: "properties" as const,
+    });
+  });
+
   describe("tab rendering", () => {
     it("renders all four tab buttons: Properties, YAML, AI, Learn", () => {
       renderSidebar();
@@ -71,6 +78,35 @@ describe("RightSidebar", () => {
       expect(screen.getByText("Properties").style.borderBottom).toContain(
         "transparent",
       );
+    });
+  });
+
+  describe("sidebar resizing", () => {
+    it("renders a resize handle", () => {
+      renderSidebar();
+      expect(screen.getByTestId("resize-handle")).toBeInTheDocument();
+    });
+
+    it("resize handle has col-resize cursor", () => {
+      renderSidebar();
+      const handle = screen.getByTestId("resize-handle");
+      expect(handle.style.cursor).toBe("col-resize");
+    });
+
+    it("double-clicking the handle resets width to default 268", () => {
+      useBuilderStore.setState({ sidebarWidth: 450 });
+      renderSidebar();
+      fireEvent.doubleClick(screen.getByTestId("resize-handle"));
+      expect(useBuilderStore.getState().sidebarWidth).toBe(268);
+    });
+
+    it("sidebar width persists across tab switches", async () => {
+      const user = userEvent.setup();
+      useBuilderStore.setState({ sidebarWidth: 400 });
+      renderSidebar();
+      await user.click(screen.getByText("YAML"));
+      await user.click(screen.getByText("AI"));
+      expect(useBuilderStore.getState().sidebarWidth).toBe(400);
     });
   });
 

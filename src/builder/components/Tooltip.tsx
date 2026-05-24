@@ -1,6 +1,7 @@
-import { useState, useRef, useCallback, useEffect, type CSSProperties, type ReactNode } from "react";
+import { useState, useRef, useCallback, useEffect, useMemo, type CSSProperties, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { useTooltipPin } from "../hooks/useTooltipPin";
+import { useOutsideClick } from "../hooks/useOutsideClick";
 
 interface TooltipProps {
   content: ReactNode;
@@ -150,6 +151,9 @@ export function Tooltip({ content, children, delay = 400, maxWidth = 320, placem
       setVisible(false);
     }
   }, [isPinned]);
+
+  const outsideRefs = useMemo(() => [tooltipRef, anchorRef], []);
+  useOutsideClick(outsideRefs, isPinned, unpin);
 
   useEffect(() => {
     if (visible || isPinned) {

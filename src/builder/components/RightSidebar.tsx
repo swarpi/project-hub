@@ -1,4 +1,4 @@
-import type { CSSProperties } from "react";
+import { useRef, useCallback, type CSSProperties } from "react";
 import { useBuilderStore } from "../store/builder-store";
 import type { UiSlice } from "../store/builder-store";
 import { AIPanel } from "./AIPanel";
@@ -6,22 +6,14 @@ import { PropertiesPanel } from "./PropertiesPanel";
 import { YamlPreview } from "./YamlPreview";
 import { LearnPanel } from "./LearnPanel";
 
+const DEFAULT_WIDTH = 268;
+
 const TABS: { key: UiSlice["activePanel"]; label: string }[] = [
 	{ key: "properties", label: "Properties" },
 	{ key: "yaml", label: "YAML" },
 	{ key: "ai", label: "AI" },
 	{ key: "learn", label: "Learn" },
 ];
-
-const CONTAINER: CSSProperties = {
-	width: 268,
-	flexShrink: 0,
-	background: "var(--wf-bg)",
-	borderLeft: "1px solid var(--wf-border)",
-	display: "flex",
-	flexDirection: "column",
-	overflow: "hidden",
-};
 
 const TAB_ROW: CSSProperties = {
 	display: "flex",
@@ -47,12 +39,99 @@ function tabStyle(active: boolean): CSSProperties {
 	};
 }
 
+const HANDLE: CSSProperties = {
+	position: "absolute",
+	top: 0,
+	left: -3,
+	width: 6,
+	height: "100%",
+	cursor: "col-resize",
+	zIndex: 10,
+};
+
+const HANDLE_LINE: CSSProperties = {
+	position: "absolute",
+	top: 0,
+	left: 2,
+	width: 2,
+	height: "100%",
+	borderRadius: 1,
+	transition: "background 0.15s ease",
+};
+
 export function RightSidebar(): React.ReactElement {
 	const activePanel = useBuilderStore((s) => s.activePanel);
 	const setActivePanel = useBuilderStore((s) => s.setActivePanel);
+	const sidebarWidth = useBuilderStore((s) => s.sidebarWidth);
+	const setSidebarWidth = useBuilderStore((s) => s.setSidebarWidth);
+
+	const containerRef = useRef<HTMLDivElement>(null);
+	const dragging = useRef(false);
+
+	const onMouseDown = useCallback(
+		(e: React.MouseEvent) => {
+			e.preventDefault();
+			dragging.current = true;
+
+			const startX = e.clientX;
+			const startWidth = sidebarWidth;
+
+			document.body.style.userSelect = "none";
+			document.body.style.cursor = "col-resize";
+
+			const onMouseMove = (ev: MouseEvent) => {
+				const delta = startX - ev.clientX;
+				setSidebarWidth(startWidth + delta);
+			};
+
+			const onMouseUp = () => {
+				dragging.current = false;
+				document.body.style.userSelect = "";
+				document.body.style.cursor = "";
+				window.removeEventListener("mousemove", onMouseMove);
+				window.removeEventListener("mouseup", onMouseUp);
+			};
+
+			window.addEventListener("mousemove", onMouseMove);
+			window.addEventListener("mouseup", onMouseUp);
+		},
+		[sidebarWidth, setSidebarWidth],
+	);
+
+	const onDoubleClick = useCallback(() => {
+		setSidebarWidth(DEFAULT_WIDTH);
+	}, [setSidebarWidth]);
+
+	const containerStyle: CSSProperties = {
+		width: sidebarWidth,
+		flexShrink: 0,
+		background: "var(--wf-bg)",
+		borderLeft: "1px solid var(--wf-border)",
+		display: "flex",
+		flexDirection: "column",
+		overflow: "hidden",
+		position: "relative",
+	};
 
 	return (
-		<div style={CONTAINER}>
+		<div ref={containerRef} style={containerStyle}>
+			<div
+				data-testid="resize-handle"
+				style={HANDLE}
+				onMouseDown={onMouseDown}
+				onDoubleClick={onDoubleClick}
+				onMouseEnter={(e) => {
+					const line = e.currentTarget.firstElementChild as HTMLElement;
+					if (line) line.style.background = "var(--wf-accent)";
+				}}
+				onMouseLeave={(e) => {
+					const line = e.currentTarget.firstElementChild as HTMLElement;
+					if (line) line.style.background = "transparent";
+				}}
+			>
+				<div style={HANDLE_LINE} />
+			</div>
+
 			<div style={TAB_ROW}>
 				{TABS.map(({ key, label }) => (
 					<button

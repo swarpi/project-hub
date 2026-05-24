@@ -1,9 +1,30 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, cleanup } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { http, HttpResponse } from "msw";
+import { beforeEach } from "vitest";
 import { server } from "@/test/mocks/server";
-import { useBuilderStore } from "../store/builder-store";
+import { useBuilderStore, createInitialDiagram } from "../store/builder-store";
 import { AIPanel } from "./AIPanel";
+
+beforeEach(() => {
+  cleanup();
+  const initial = createInitialDiagram();
+  useBuilderStore.setState({
+    ...initial,
+    freeformMessages: [],
+    guidedMessages: [],
+    guidedConfidence: 0,
+    selectedNodeId: null,
+    selectedEdgeId: null,
+    activePanel: "properties" as const,
+    aiPanelOpen: false,
+    sidebarExpanded: false,
+    apiKey: "",
+    aiBaseUrl: "http://localhost:3456",
+    snapToGrid: false,
+    gridSize: 20,
+  });
+});
 
 function setApiKey(key = "test-key") {
   useBuilderStore.setState({ apiKey: key, aiBaseUrl: "https://api.anthropic.com" });

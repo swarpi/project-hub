@@ -17,12 +17,24 @@ interface DiagramSlice {
 	layoutVersion: number;
 }
 
+interface ChatMessage {
+	role: "user" | "assistant" | "error";
+	content: string;
+}
+
+interface AiChatSlice {
+	freeformMessages: ChatMessage[];
+	guidedMessages: ChatMessage[];
+	guidedConfidence: number;
+}
+
 interface UiSlice {
 	selectedNodeId: string | null;
 	selectedEdgeId: string | null;
 	activePanel: "properties" | "ai" | "yaml" | "learn";
 	aiPanelOpen: boolean;
 	pinnedTooltipId: string | null;
+	sidebarWidth: number;
 }
 
 interface SettingsSlice {
@@ -74,6 +86,13 @@ interface DiagramActions {
 	) => void;
 }
 
+interface AiChatActions {
+	addChatMessage: (mode: "freeform" | "guided", message: ChatMessage) => void;
+	setChatMessages: (mode: "freeform" | "guided", messages: ChatMessage[]) => void;
+	clearChatMessages: (mode: "freeform" | "guided") => void;
+	setGuidedConfidence: (confidence: number) => void;
+}
+
 interface UiActions {
 	selectNode: (id: string | null) => void;
 	selectEdge: (id: string | null) => void;
@@ -81,6 +100,7 @@ interface UiActions {
 	setActivePanel: (panel: UiSlice["activePanel"]) => void;
 	pinTooltip: (id: string) => void;
 	unpinTooltip: () => void;
+	setSidebarWidth: (width: number) => void;
 }
 
 interface SettingsActions {
@@ -90,10 +110,12 @@ interface SettingsActions {
 }
 
 type BuilderState = DiagramSlice &
+	AiChatSlice &
 	UiSlice &
 	SettingsSlice &
 	ZoneActions &
 	DiagramActions &
+	AiChatActions &
 	UiActions &
 	SettingsActions;
 
@@ -122,6 +144,7 @@ function partializeDiagram(state: BuilderState): DiagramSlice {
 }
 
 const SETTINGS_KEY = "diagram-builder-settings";
+const CHAT_KEY = "diagram-builder-chat";
 
 function loadPersistedSettings(): Partial<SettingsSlice> {
 	try {
@@ -147,7 +170,31 @@ function persistSettings(state: SettingsSlice): void {
 	);
 }
 
+function loadPersistedChat(): Partial<AiChatSlice> {
+	try {
+		const raw = localStorage.getItem(CHAT_KEY);
+		if (raw) {
+			return JSON.parse(raw) as Partial<AiChatSlice>;
+		}
+	} catch {
+		// ignore corrupt data
+	}
+	return {};
+}
+
+function persistChat(state: AiChatSlice): void {
+	localStorage.setItem(
+		CHAT_KEY,
+		JSON.stringify({
+			freeformMessages: state.freeformMessages,
+			guidedMessages: state.guidedMessages,
+			guidedConfidence: state.guidedConfidence,
+		}),
+	);
+}
+
 const savedSettings = loadPersistedSettings();
+const savedChat = loadPersistedChat();
 
 export const useBuilderStore = create<BuilderState>()(
 	persist(
@@ -187,11 +234,16 @@ export const useBuilderStore = create<BuilderState>()(
 						return { zones: ordered };
 					}),
 
+				freeformMessages: savedChat.freeformMessages ?? [],
+				guidedMessages: savedChat.guidedMessages ?? [],
+				guidedConfidence: savedChat.guidedConfidence ?? 0,
+
 				selectedNodeId: null,
 				selectedEdgeId: null,
 				activePanel: "properties" as const,
 				aiPanelOpen: false,
 				pinnedTooltipId: null,
+				sidebarWidth: 268,
 
 				apiKey: savedSettings.apiKey ?? "",
 				aiBaseUrl: savedSettings.aiBaseUrl ?? "http://localhost:3456",
@@ -368,6 +420,25 @@ export const useBuilderStore = create<BuilderState>()(
 						};
 					}),
 
+				addChatMessage: (mode, message) =>
+					set((state) => ({
+						[mode === "freeform" ? "freeformMessages" : "guidedMessages"]:
+							[...(mode === "freeform" ? state.freeformMessages : state.guidedMessages), message],
+					})),
+
+				setChatMessages: (mode, messages) =>
+					set({
+						[mode === "freeform" ? "freeformMessages" : "guidedMessages"]: messages,
+					}),
+
+				clearChatMessages: (mode) =>
+					set({
+						[mode === "freeform" ? "freeformMessages" : "guidedMessages"]: [],
+						...(mode === "guided" ? { guidedConfidence: 0 } : {}),
+					}),
+
+				setGuidedConfidence: (confidence) => set({ guidedConfidence: confidence }),
+
 				selectNode: (id) =>
 					set({ selectedNodeId: id, selectedEdgeId: null }),
 
@@ -382,6 +453,9 @@ export const useBuilderStore = create<BuilderState>()(
 				pinTooltip: (id) => set({ pinnedTooltipId: id }),
 
 				unpinTooltip: () => set({ pinnedTooltipId: null }),
+
+				setSidebarWidth: (width) =>
+					set({ sidebarWidth: Math.max(220, Math.min(700, width)) }),
 
 				setApiKey: (key) => set({ apiKey: key }),
 
@@ -432,7 +506,14 @@ useBuilderStore.subscribe((state, prev) => {
 	) {
 		persistSettings(state);
 	}
+	if (
+		state.freeformMessages !== prev.freeformMessages ||
+		state.guidedMessages !== prev.guidedMessages ||
+		state.guidedConfidence !== prev.guidedConfidence
+	) {
+		persistChat(state);
+	}
 });
 
-export type { DiagramSlice, UiSlice, SettingsSlice, BuilderState };
+export type { ChatMessage, AiChatSlice, DiagramSlice, UiSlice, SettingsSlice, BuilderState };
 export type { TemporalState };

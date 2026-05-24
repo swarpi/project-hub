@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useEffect } from "react";
+import { useState, useCallback, useRef, useEffect, useMemo } from "react";
 import { createPortal } from "react-dom";
 import {
 	BaseEdge,
@@ -12,6 +12,7 @@ import { useBuilderStore } from "../store/builder-store";
 import { getProtocolInfo, STYLE_EXPLANATIONS } from "../lib/education";
 import { TT_HEADING, TT_LABEL, TT_TEXT, TT_DIVIDER, TT_BADGE, TOOLTIP_CARD } from "../components/Tooltip";
 import { useTooltipPin } from "../hooks/useTooltipPin";
+import { useOutsideClick } from "../hooks/useOutsideClick";
 
 interface ArchConnectionData extends Record<string, unknown> {
 	protocol: string;
@@ -185,8 +186,13 @@ export function ArchConnectionEdge({
 	const [tooltipCoords, setTooltipCoords] = useState({ x: 0, y: 0 });
 	const [tooltipBelow, setTooltipBelow] = useState(false);
 	const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+	const tooltipRef = useRef<HTMLDivElement>(null);
+	const hitPathRef = useRef<SVGPathElement>(null);
+	const labelRef = useRef<HTMLDivElement>(null);
 	const pinId = `edge:${source}->${target}`;
 	const { isPinned, togglePin, unpin } = useTooltipPin(pinId);
+	const outsideRefs = useMemo(() => [tooltipRef, hitPathRef, labelRef], []);
+	useOutsideClick(outsideRefs, isPinned, unpin);
 
 	const computeEdgeTooltipCoords = useCallback((clientX: number, clientY: number) => {
 		const estimatedHeight = 180;
@@ -262,6 +268,7 @@ export function ArchConnectionEdge({
 
 			{/* Invisible wider hit area for hover and click */}
 			<path
+				ref={hitPathRef}
 				d={path}
 				fill="none"
 				stroke="transparent"
@@ -275,6 +282,7 @@ export function ArchConnectionEdge({
 			{data?.protocol && (
 				<EdgeLabelRenderer>
 					<div
+						ref={labelRef}
 						className="nodrag nopan"
 						onMouseEnter={onMouseEnter}
 						onMouseLeave={onMouseLeave}
@@ -302,7 +310,7 @@ export function ArchConnectionEdge({
 			)}
 
 			{(hovered || isPinned) && data && createPortal(
-				<div style={{
+				<div ref={tooltipRef} style={{
 					position: "fixed",
 					left: tooltipCoords.x,
 					top: tooltipCoords.y,

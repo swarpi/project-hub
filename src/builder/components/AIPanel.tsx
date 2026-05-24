@@ -5,12 +5,9 @@ import { yamlToDiagram } from "../lib/yaml-import";
 import { computeTierLayout } from "../lib/layout";
 import { sendMessage, AIClientError } from "@/lib/ai-client";
 
-type AiMode = "freeform" | "guided";
+import type { ChatMessage } from "../store/builder-store";
 
-interface ChatMessage {
-	role: "user" | "assistant" | "error";
-	content: string;
-}
+type AiMode = "freeform" | "guided";
 
 function buildSystemPrompt(yaml: string): string {
 	return `You are an expert software architecture assistant embedded in a visual diagram builder. The user is designing a system architecture and can see their diagram on a canvas beside this chat.
@@ -254,10 +251,14 @@ export function AIPanel(): React.ReactElement {
 	const mergeDiagram = useBuilderStore((s) => s.mergeDiagram);
 	const zones = useBuilderStore((s) => s.zones);
 
+	const freeformMessages = useBuilderStore((s) => s.freeformMessages);
+	const guidedMessages = useBuilderStore((s) => s.guidedMessages);
+	const confidence = useBuilderStore((s) => s.guidedConfidence);
+	const addChatMessage = useBuilderStore((s) => s.addChatMessage);
+	const setChatMessages = useBuilderStore((s) => s.setChatMessages);
+	const setGuidedConfidence = useBuilderStore((s) => s.setGuidedConfidence);
+
 	const [mode, setMode] = useState<AiMode>("freeform");
-	const [freeformMessages, setFreeformMessages] = useState<ChatMessage[]>([]);
-	const [guidedMessages, setGuidedMessages] = useState<ChatMessage[]>([]);
-	const [confidence, setConfidence] = useState(0);
 	const [hintDismissed, setHintDismissed] = useState(false);
 	const [input, setInput] = useState("");
 	const [loading, setLoading] = useState(false);
@@ -266,7 +267,6 @@ export function AIPanel(): React.ReactElement {
 	const textareaRef = useRef<HTMLTextAreaElement>(null);
 
 	const messages = mode === "guided" ? guidedMessages : freeformMessages;
-	const setMessages = mode === "guided" ? setGuidedMessages : setFreeformMessages;
 	const hasComponents = components.length > 0;
 	const showHint = !hintDismissed && !hasComponents && mode === "freeform" && freeformMessages.length === 0;
 
@@ -281,7 +281,7 @@ export function AIPanel(): React.ReactElement {
 	const send = useCallback(
 		async (userContent: string) => {
 			const userMsg: ChatMessage = { role: "user", content: userContent };
-			setMessages((prev) => [...prev, userMsg]);
+			addChatMessage(mode, userMsg);
 			setLoading(true);
 
 			try {
@@ -306,37 +306,28 @@ export function AIPanel(): React.ReactElement {
 
 				if (mode === "guided") {
 					const parsed = parseConfidence(response);
-					if (parsed !== null) setConfidence(parsed);
+					if (parsed !== null) setGuidedConfidence(parsed);
 				}
 
-				setMessages((prev) => [
-					...prev,
-					{ role: "assistant", content: response },
-				]);
+				addChatMessage(mode, { role: "assistant", content: response });
 			} catch (err) {
 				const message =
 					err instanceof AIClientError
 						? err.message
 						: "An unexpected error occurred";
-				setMessages((prev) => [
-					...prev,
-					{ role: "error", content: message },
-				]);
+				addChatMessage(mode, { role: "error", content: message });
 			} finally {
 				setLoading(false);
 			}
 		},
-		[apiKey, aiBaseUrl, messages, mode, name, description, zones, components, connections, setMessages],
+		[apiKey, aiBaseUrl, messages, mode, name, description, zones, components, connections, addChatMessage, setGuidedConfidence],
 	);
 
 	const applyYaml = useCallback(
 		(yamlStr: string) => {
 			const { diagram, errors } = yamlToDiagram(yamlStr);
 			if (errors.length > 0 && diagram.components.length === 0) {
-				setMessages((prev) => [
-					...prev,
-					{ role: "error", content: `Could not parse diagram: ${errors.join(", ")}` },
-				]);
+				addChatMessage(mode, { role: "error", content: `Could not parse diagram: ${errors.join(", ")}` });
 				return;
 			}
 			const diagramZones = diagram.zones && diagram.zones.length > 0 ? diagram.zones : zones;
@@ -344,17 +335,14 @@ export function AIPanel(): React.ReactElement {
 			loadDiagram({ ...diagram, zones: diagramZones, positions: layoutResult.components });
 			setAppliedBlocks((prev) => new Set(prev).add(yamlStr));
 		},
-		[loadDiagram, zones],
+		[loadDiagram, zones, mode, addChatMessage],
 	);
 
 	const mergeYaml = useCallback(
 		(yamlStr: string) => {
 			const { diagram, errors } = yamlToDiagram(yamlStr);
 			if (errors.length > 0 && diagram.components.length === 0) {
-				setMessages((prev) => [
-					...prev,
-					{ role: "error", content: `Could not parse diagram: ${errors.join(", ")}` },
-				]);
+				addChatMessage(mode, { role: "error", content: `Could not parse diagram: ${errors.join(", ")}` });
 				return;
 			}
 			const diagramZones = diagram.zones && diagram.zones.length > 0 ? diagram.zones : zones;
@@ -362,7 +350,7 @@ export function AIPanel(): React.ReactElement {
 			mergeDiagram({ ...diagram, zones: diagramZones, positions: layoutResult.components });
 			setAppliedBlocks((prev) => new Set(prev).add(yamlStr));
 		},
-		[mergeDiagram, zones],
+		[mergeDiagram, zones, mode, addChatMessage],
 	);
 
 	const onReview = useCallback(() => {

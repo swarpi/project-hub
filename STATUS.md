@@ -1,6 +1,6 @@
 # Project Status
 
-> Last updated: 2026-05-23 17:24 UTC
+> Last updated: 2026-05-24 08:44 UTC
 
 ## Current Phase
 
@@ -23,10 +23,13 @@ _What is currently being worked on, the relevant tickets, and the expected next 
 
 <!-- AUTO:START -->
 **Branch:** `main`  
-**Last commit:** 2026-05-23 17:24 UTC
+**Last commit:** 2026-05-24 08:44 UTC
 
 | Hash | Date | Message |
 |------|------|---------|
+| `9ee1404` | 2026-05-24 | feat: add tooltip viewport clamping and click-to-pin behavior |
+| `6ceffe9` | 2026-05-23 | feat: add AI-driven in-place diagram updates |
+| `03ea1a7` | 2026-05-23 | test: update test infrastructure and fix existing test files |
 | `5276603` | 2026-05-23 | ci: add test gate to deploy workflow |
 | `2af0595` | 2026-05-22 | test: add integration tests for builder panel components |
 | `32440a0` | 2026-05-22 | test: add E2E visual regression tests for builder, YAML, zones, and hub |
@@ -34,9 +37,6 @@ _What is currently being worked on, the relevant tickets, and the expected next 
 | `de39c4d` | 2026-05-22 | perf: optimize Canvas and builder components with useShallow and memo |
 | `aece977` | 2026-05-22 | refactor: extract shared graph utilities and migrate to Geist font |
 | `a9bfaa2` | 2026-05-22 | test: add unit tests for YAML, store, layout, education, and network |
-| `f66553a` | 2026-05-22 | feat: add test infrastructure with vitest, playwright, and MSW |
-| `ebb47b5` | 2026-05-22 | feat: add zone parsing to YAML import |
-| `3bbd438` | 2026-05-22 | feat: add learn tab with educational diagram analysis |
 <!-- AUTO:END -->
 
 ## Recent File Changes
@@ -46,25 +46,25 @@ _What is currently being worked on, the relevant tickets, and the expected next 
 
 ```
  .github/workflows/deploy.yml                       |   4 +
- e2e/builder-core.spec.ts                           | 308 ++++++++++++++
- e2e/hub.spec.ts                                    | 125 ++++++
- e2e/yaml-zones.spec.ts                             | 202 +++++++++
- src/builder/components/Canvas.tsx                  |  77 ++--
- src/builder/components/Palette.test.tsx            | 150 +++++++
- src/builder/components/PropertiesPanel.test.tsx    | 457 +++++++++++++++++++++
- src/builder/components/RightSidebar.test.tsx       | 142 +++++++
- src/builder/components/Toolbar.test.tsx            | 384 +++++++++++++++++
- src/builder/components/Toolbar.tsx                 |  83 ++--
- src/builder/components/YamlPreview.test.tsx        | 125 ++++++
- src/builder/nodes/ArchComponentNode.tsx            |  33 +-
- tickets/_backlog.md                                |  48 +--
- .../001-zone-layout-module-refactor.md             |   2 +-
- tickets/flexible-zones/002-store-zones-slice.md    |   2 +-
- .../003-tier-zone-node-interactive.md              |   2 +-
- .../004-canvas-zone-driven-rendering.md            |   2 +-
- .../flexible-zones/005-palette-dynamic-zones.md    |   2 +-
- .../006-properties-panel-zone-section.md           |   2 +-
- tickets/learn-tab/001-store-type-and-tab-wiring.md |   2 +-
+ STATUS.md                                          |  58 ++-
+ .../decisions/ADR-0006-ai-diagram-update-mode.md   | 206 ++++++++
+ e2e/builder-core.spec.ts                           | 229 ++++++++-
+ .../builder-component-selected-chromium-darwin.png | Bin 0 -> 86265 bytes
+ .../builder-empty-chromium-darwin.png              | Bin 0 -> 74778 bytes
+ .../builder-multi-component-chromium-darwin.png    | Bin 0 -> 87619 bytes
+ .../builder-one-component-chromium-darwin.png      | Bin 0 -> 86200 bytes
+ .../hub-dashboard-chromium-darwin.png              | Bin 0 -> 70331 bytes
+ e2e/hub.spec.ts                                    |  53 +-
+ .../hub-full-chromium-darwin.png                   | Bin 0 -> 149403 bytes
+ .../hub-pipeline-chromium-darwin.png               | Bin 0 -> 80070 bytes
+ .../hub-workflows-chromium-darwin.png              | Bin 0 -> 70331 bytes
+ e2e/yaml-zones.spec.ts                             |   8 +-
+ .../yaml-preview-chromium-darwin.png               | Bin 0 -> 108636 bytes
+ .../yaml-roundtrip-chromium-darwin.png             | Bin 0 -> 69402 bytes
+ .../zone-added-chromium-darwin.png                 | Bin 0 -> 78050 bytes
+ .../zone-deleted-chromium-darwin.png               | Bin 0 -> 68900 bytes
+ src/App.test.tsx                                   | 209 ++++++++
+ src/builder/BuilderPage.test.tsx                   | 163 ++++++
 ```
 <!-- AUTO:FILES:END -->
 

@@ -74,10 +74,14 @@ function resetStore(): void {
 	// Merge-reset: only overwrite data fields, never action functions.
 	useBuilderStore.setState({
 		...initial,
+		freeformMessages: [],
+		guidedMessages: [],
+		guidedConfidence: 0,
 		selectedNodeId: null,
 		selectedEdgeId: null,
 		activePanel: "properties" as const,
 		aiPanelOpen: false,
+		sidebarWidth: 268,
 		apiKey: "",
 		aiBaseUrl: "http://localhost:3456",
 		snapToGrid: false,
@@ -581,6 +585,28 @@ describe("UiSlice actions", () => {
 
 		expect(useBuilderStore.getState().activePanel).toBe("yaml");
 	});
+
+	it("sidebarWidth defaults to 268", () => {
+		expect(useBuilderStore.getState().sidebarWidth).toBe(268);
+	});
+
+	it("setSidebarWidth sets width to given value", () => {
+		useBuilderStore.getState().setSidebarWidth(450);
+
+		expect(useBuilderStore.getState().sidebarWidth).toBe(450);
+	});
+
+	it("setSidebarWidth clamps to minimum 220", () => {
+		useBuilderStore.getState().setSidebarWidth(100);
+
+		expect(useBuilderStore.getState().sidebarWidth).toBe(220);
+	});
+
+	it("setSidebarWidth clamps to maximum 700", () => {
+		useBuilderStore.getState().setSidebarWidth(900);
+
+		expect(useBuilderStore.getState().sidebarWidth).toBe(700);
+	});
 });
 
 // ===========================================================================
@@ -683,6 +709,17 @@ describe("Undo/redo (temporal/zundo)", () => {
 		// The actual behaviour depends on the partialize config — assert on what the store does
 		// At minimum, the diagram change (addComponent) should be reverted
 		expect(useBuilderStore.getState().components).toHaveLength(0);
+	});
+
+	it("undo/redo does not affect sidebarWidth (UiSlice)", () => {
+		const comp = makeComponent({ id: "sidebar-undo-comp" });
+		useBuilderStore.getState().addComponent(comp);
+		useBuilderStore.getState().setSidebarWidth(500);
+
+		useBuilderStore.temporal.getState().undo();
+
+		expect(useBuilderStore.getState().components).toHaveLength(0);
+		expect(useBuilderStore.getState().sidebarWidth).toBe(500);
 	});
 
 	it("undo is a no-op when history is empty", () => {

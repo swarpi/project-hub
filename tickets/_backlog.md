@@ -16,8 +16,6 @@ _Tickets ready to be picked up in the next cycle._
 
 | Ticket | Feature | Priority | Estimate |
 |--------|---------|----------|----------|
-| [006 — Fix edge tooltip viewport clipping](builder-tooltips/006-edge-tooltip-viewport-clipping.md) | builder-tooltips | P2 | S |
-| [007 — Click-to-pin tooltips](builder-tooltips/007-click-to-pin-tooltips.md) | builder-tooltips | P2 | M |
 | [005 — Visibility pattern and polish](learn-tab/005-visibility-pattern-and-polish.md) | learn-tab | P2 | S |
 | [007 — Auto-layout and YAML export zone-aware updates](flexible-zones/007-layout-and-yaml-export-update.md) | flexible-zones | P1 | S |
 | [008 — Tier icons: LayerIcon fallback for custom zones](flexible-zones/008-tier-icons-layer-icon.md) | flexible-zones | P2 | XS |
@@ -36,6 +34,8 @@ _Completed tickets. Move here when done, newest first._
 
 | Ticket | Feature | Completed |
 |--------|---------|-----------|
+| [001 — Resizable chat panel](builder-ux/001-expandable-chat-panel.md) | builder-ux | 2026-05-24 |
+| [008 — Tooltip click-to-pin follow-ups](builder-tooltips/008-tooltip-followups.md) | builder-tooltips | 2026-05-24 |
 | [003 — Tests for mergeDiagram and Update Diagram UI](ai-update/003-merge-diagram-tests.md) | ai-update | 2026-05-23 |
 | [002 — "Update Diagram" button and system prompt changes](ai-update/002-update-diagram-ui-and-prompts.md) | ai-update | 2026-05-23 |
 | [001 — mergeDiagram store action](ai-update/001-merge-diagram-store-action.md) | ai-update | 2026-05-23 |

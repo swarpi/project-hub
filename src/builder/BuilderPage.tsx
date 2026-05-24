@@ -94,9 +94,9 @@ function BuilderInner() {
 	return (
 		<div style={{ height: "calc(100vh - 57px)", display: "flex", flexDirection: "column" }}>
 			{showRestore && <RestoreBanner onDismiss={() => setShowRestore(false)} />}
-			<div style={{ flex: 1, display: "flex", minHeight: 0 }}>
+			<div style={{ flex: 1, display: "flex", minHeight: 0, overflow: "hidden" }}>
 				<Palette />
-				<div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
+				<div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0 }}>
 					<Toolbar />
 					<div style={{ flex: 1 }}>
 						<Canvas />
