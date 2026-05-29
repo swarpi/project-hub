@@ -1,4 +1,5 @@
-import { useRef, useCallback, type CSSProperties } from "react";
+import { useRef, useCallback } from "react";
+import type { CSSProperties } from "react";
 import { useBuilderStore } from "../store/builder-store";
 import type { UiSlice } from "../store/builder-store";
 import { AIPanel } from "./AIPanel";

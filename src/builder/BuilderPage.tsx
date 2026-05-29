@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback, type CSSProperties } from "react";
+import { useState, useEffect, useCallback } from "react";
+import type { CSSProperties } from "react";
 import { ReactFlowProvider, useReactFlow } from "@xyflow/react";
 import { Canvas } from "./components/Canvas";
 import { Palette } from "./components/Palette";

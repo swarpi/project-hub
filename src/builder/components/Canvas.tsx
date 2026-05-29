@@ -1,4 +1,5 @@
-import { useMemo, useCallback, useState, useEffect, type CSSProperties } from "react";
+import { useMemo, useCallback, useState, useEffect } from "react";
+import type { CSSProperties } from "react";
 import {
 	ReactFlow,
 	Background,

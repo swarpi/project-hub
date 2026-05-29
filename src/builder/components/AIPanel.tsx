@@ -1,4 +1,5 @@
-import { useState, useCallback, useRef, useEffect, memo, type CSSProperties } from "react";
+import { useState, useCallback, useRef, useEffect, memo } from "react";
+import type { CSSProperties } from "react";
 import { useBuilderStore } from "../store/builder-store";
 import { diagramToYaml } from "../lib/yaml-export";
 import { yamlToDiagram } from "../lib/yaml-import";

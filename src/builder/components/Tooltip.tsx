@@ -1,4 +1,5 @@
-import { useState, useRef, useCallback, useEffect, useMemo, type CSSProperties, type ReactNode } from "react";
+import { useState, useRef, useCallback, useEffect, useMemo } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { useTooltipPin } from "../hooks/useTooltipPin";
 import { useOutsideClick } from "../hooks/useOutsideClick";

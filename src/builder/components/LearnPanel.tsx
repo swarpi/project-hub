@@ -1,4 +1,5 @@
-import { useState, useCallback, memo, type CSSProperties } from "react";
+import { useState, useCallback, memo } from "react";
+import type { CSSProperties } from "react";
 import { useBuilderStore } from "../store/builder-store";
 import { useShallow } from "zustand/react/shallow";
 import { COLORS } from "../lib/node-styles";
