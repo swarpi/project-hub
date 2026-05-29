@@ -26,6 +26,54 @@ export const GRAPH_COLORS: Record<string, { main: string; light: string; dim: st
     dim: 'oklch(0.55 0.15 240 / 0.12)',
     border: 'oklch(0.55 0.15 240 / 0.2)',
   },
+  rose: {
+    main: 'oklch(0.55 0.18 15)',
+    light: 'oklch(0.94 0.04 15)',
+    dim: 'oklch(0.55 0.18 15 / 0.12)',
+    border: 'oklch(0.55 0.18 15 / 0.2)',
+  },
+  teal: {
+    main: 'oklch(0.55 0.12 185)',
+    light: 'oklch(0.94 0.04 185)',
+    dim: 'oklch(0.55 0.12 185 / 0.12)',
+    border: 'oklch(0.55 0.12 185 / 0.2)',
+  },
+  purple: {
+    main: 'oklch(0.50 0.18 300)',
+    light: 'oklch(0.94 0.04 300)',
+    dim: 'oklch(0.50 0.18 300 / 0.12)',
+    border: 'oklch(0.50 0.18 300 / 0.2)',
+  },
+  slate: {
+    main: 'oklch(0.50 0.02 260)',
+    light: 'oklch(0.94 0.01 260)',
+    dim: 'oklch(0.50 0.02 260 / 0.12)',
+    border: 'oklch(0.50 0.02 260 / 0.2)',
+  },
+  violet: {
+    main: 'oklch(0.48 0.20 290)',
+    light: 'oklch(0.94 0.04 290)',
+    dim: 'oklch(0.48 0.20 290 / 0.12)',
+    border: 'oklch(0.48 0.20 290 / 0.2)',
+  },
+  gray: {
+    main: 'oklch(0.55 0.01 260)',
+    light: 'oklch(0.94 0.005 260)',
+    dim: 'oklch(0.55 0.01 260 / 0.12)',
+    border: 'oklch(0.55 0.01 260 / 0.2)',
+  },
+  sky: {
+    main: 'oklch(0.55 0.14 220)',
+    light: 'oklch(0.94 0.03 220)',
+    dim: 'oklch(0.55 0.14 220 / 0.12)',
+    border: 'oklch(0.55 0.14 220 / 0.2)',
+  },
+  emerald: {
+    main: 'oklch(0.55 0.15 165)',
+    light: 'oklch(0.94 0.04 165)',
+    dim: 'oklch(0.55 0.15 165 / 0.12)',
+    border: 'oklch(0.55 0.15 165 / 0.2)',
+  },
 };
 
 export const GC = {

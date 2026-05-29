@@ -53,7 +53,7 @@ function ConnectionLayer({ positions, connections, components }: { positions: Po
 
   const getColor = (compId: string) => {
     const comp = components.find((c) => c.id === compId);
-    return GRAPH_COLORS[comp?.color || 'indigo'];
+    return GRAPH_COLORS[comp?.color || 'indigo'] ?? GRAPH_COLORS.indigo;
   };
 
   const CURVATURE = 0.25;
@@ -161,7 +161,7 @@ function ComponentNode({
   onDrag: (id: string, e: React.MouseEvent) => void;
   isDragging: boolean;
 }) {
-  const color = GRAPH_COLORS[component.color || 'indigo'];
+  const color = GRAPH_COLORS[component.color || 'indigo'] ?? GRAPH_COLORS.indigo;
   const [hovered, setHovered] = useState(false);
   const active = selected || hovered;
   const hasInteracted = useRef(false);
@@ -258,7 +258,7 @@ function ComponentNode({
 }
 
 function DetailPanel({ component, onClose }: { component: ArchComponent; onClose: () => void }) {
-  const color = GRAPH_COLORS[component.color || 'indigo'];
+  const color = GRAPH_COLORS[component.color || 'indigo'] ?? GRAPH_COLORS.indigo;
 
   return (
     <div style={{

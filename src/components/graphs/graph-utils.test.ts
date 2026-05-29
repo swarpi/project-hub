@@ -8,16 +8,24 @@ import {
 } from "./graph-utils";
 
 describe("GRAPH_COLORS", () => {
-  it("has four color keys", () => {
+  it("has all expected color keys", () => {
     expect(Object.keys(GRAPH_COLORS)).toEqual([
       "indigo",
       "amber",
       "green",
       "blue",
+      "rose",
+      "teal",
+      "purple",
+      "slate",
+      "violet",
+      "gray",
+      "sky",
+      "emerald",
     ]);
   });
 
-  it.each(["indigo", "amber", "green", "blue"] as const)(
+  it.each(Object.keys(GRAPH_COLORS))(
     "%s has main, light, dim, border variants",
     (color) => {
       const entry = GRAPH_COLORS[color];
