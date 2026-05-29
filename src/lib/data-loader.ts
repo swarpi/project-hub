@@ -10,22 +10,6 @@ export function useProjectData() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetch(DATA_URL)
-      .then((res) => {
-        if (!res.ok) throw new Error('No pre-fetched data');
-        return res.json();
-      })
-      .then((json: HubData) => {
-        setData(json);
-        setIsLoading(false);
-      })
-      .catch(() => {
-        setIsLoading(false);
-        refresh();
-      });
-  }, []);
-
   const refresh = useCallback(async () => {
     setIsRefreshing(true);
     setError(null);
@@ -48,6 +32,22 @@ export function useProjectData() {
       setIsRefreshing(false);
     }
   }, []);
+
+  useEffect(() => {
+    fetch(DATA_URL)
+      .then((res) => {
+        if (!res.ok) throw new Error('No pre-fetched data');
+        return res.json();
+      })
+      .then((json: HubData) => {
+        setData(json);
+        setIsLoading(false);
+      })
+      .catch(() => {
+        setIsLoading(false);
+        refresh();
+      });
+  }, [refresh]);
 
   return { data, isLoading, isRefreshing, error, refresh };
 }

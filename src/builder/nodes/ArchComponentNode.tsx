@@ -10,7 +10,8 @@ import {
 } from "../lib/node-styles";
 import type { ColorKey } from "../lib/node-styles";
 import { TierIcon } from "../lib/tier-icons";
-import { Tooltip, TT_HEADING, TT_LABEL, TT_TEXT, TT_DIVIDER, TT_BADGE } from "../components/Tooltip";
+import { Tooltip } from "../components/Tooltip";
+import { TT_HEADING, TT_LABEL, TT_TEXT, TT_DIVIDER, TT_BADGE } from "../components/tooltip-styles";
 import { TIER_EXPLANATIONS } from "../lib/education";
 import { useBuilderStore } from "../store/builder-store";
 

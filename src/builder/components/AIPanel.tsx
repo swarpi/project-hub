@@ -255,7 +255,6 @@ export function AIPanel(): React.ReactElement {
 	const guidedMessages = useBuilderStore((s) => s.guidedMessages);
 	const confidence = useBuilderStore((s) => s.guidedConfidence);
 	const addChatMessage = useBuilderStore((s) => s.addChatMessage);
-	const setChatMessages = useBuilderStore((s) => s.setChatMessages);
 	const setGuidedConfidence = useBuilderStore((s) => s.setGuidedConfidence);
 
 	const [mode, setMode] = useState<AiMode>("freeform");

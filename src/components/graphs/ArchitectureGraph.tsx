@@ -65,7 +65,7 @@ function ConnectionLayer({ positions, connections, components }: { positions: Po
     pairIndex.set(key, idx + 1);
   });
 
-  let pairCounter = new Map<string, number>();
+  const pairCounter = new Map<string, number>();
 
   const lines = connections.map((conn) => {
     const fromPos = positions[conn.from];
@@ -345,7 +345,7 @@ interface ArchitectureGraphProps {
   onClose?: () => void;
 }
 
-export default function ArchitectureGraph({ architecture, projectName, projectUrl: _projectUrl, onClose }: ArchitectureGraphProps) {
+export default function ArchitectureGraph({ architecture, projectName, onClose }: ArchitectureGraphProps) {
   const [selected, setSelected] = useState<string | null>(null);
   const [positions, setPositions] = useState<Positions>({});
   const [dims, setDims] = useState({ W: 1200, H: 800 });

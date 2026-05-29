@@ -171,9 +171,8 @@ function CollapsibleSection({
 	);
 }
 
-const ComponentCard = memo(function ComponentCard({ component, zoneName: _zoneName, aiText }: {
+const ComponentCard = memo(function ComponentCard({ component, aiText }: {
 	component: ArchComponent;
-	zoneName: string;
 	aiText?: string;
 }): React.ReactElement {
 	const color = COLORS[(component.color as ColorKey) ?? "indigo"];
@@ -247,7 +246,6 @@ const ZoneGroup = memo(function ZoneGroup({ zoneId, components: comps, parsedSec
 				<ComponentCard
 					key={comp.id}
 					component={comp}
-					zoneName={zoneName}
 					aiText={parsedSections?.components[comp.id]}
 				/>
 			))}

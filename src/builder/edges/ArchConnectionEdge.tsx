@@ -10,7 +10,7 @@ import { COLORS } from "../lib/node-styles";
 import type { ColorKey } from "../lib/node-styles";
 import { useBuilderStore } from "../store/builder-store";
 import { getProtocolInfo, STYLE_EXPLANATIONS } from "../lib/education";
-import { TT_HEADING, TT_LABEL, TT_TEXT, TT_DIVIDER, TT_BADGE, TOOLTIP_CARD } from "../components/Tooltip";
+import { TT_HEADING, TT_LABEL, TT_TEXT, TT_DIVIDER, TT_BADGE, TOOLTIP_CARD } from "../components/tooltip-styles";
 import { useTooltipPin } from "../hooks/useTooltipPin";
 import { useOutsideClick } from "../hooks/useOutsideClick";
 
@@ -154,7 +154,6 @@ function EdgeTooltipContent({
 }
 
 export function ArchConnectionEdge({
-	id: _id,
 	source,
 	target,
 	sourceX,
