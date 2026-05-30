@@ -18,7 +18,7 @@ beforeEach(() => {
     selectedEdgeId: null,
     activePanel: "properties" as const,
     aiPanelOpen: false,
-    sidebarExpanded: false,
+    sidebarWidth: 268,
     apiKey: "",
     aiBaseUrl: "http://localhost:3456",
     snapToGrid: false,
