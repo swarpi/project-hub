@@ -1,4 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
+import { expectScreenshot } from "./screenshot";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -46,7 +47,7 @@ test.describe.serial("Builder core flows", () => {
     await expect(reactFlowCanvas(page)).toBeVisible();
     await expect(page.locator(".react-flow__renderer")).toBeVisible();
 
-    await expect(page).toHaveScreenshot("builder-empty.png", {
+    await expectScreenshot(page, "builder-empty.png", {
       maxDiffPixelRatio: 0.01,
     });
   });
@@ -91,7 +92,7 @@ test.describe.serial("Builder core flows", () => {
       componentsBefore + 1,
     );
 
-    await expect(page).toHaveScreenshot("builder-one-component.png", {
+    await expectScreenshot(page, "builder-one-component.png", {
       maxDiffPixelRatio: 0.01,
     });
   });
@@ -139,7 +140,7 @@ test.describe.serial("Builder core flows", () => {
       page.getByRole("heading", { name: "Component" }),
     ).toBeVisible();
 
-    await expect(page).toHaveScreenshot("builder-component-selected.png", {
+    await expectScreenshot(page, "builder-component-selected.png", {
       maxDiffPixelRatio: 0.01,
     });
   });
@@ -216,7 +217,7 @@ test.describe.serial("Builder core flows", () => {
     // Hub renders a footer (builder does not)
     await expect(page.locator("footer")).toBeVisible();
 
-    await expect(page).toHaveScreenshot("hub-dashboard.png", {
+    await expectScreenshot(page, "hub-dashboard.png", {
       maxDiffPixelRatio: 0.01,
     });
 
@@ -303,7 +304,7 @@ test.describe.serial("Builder core flows", () => {
     // Allow layout animation to settle
     await page.locator(".react-flow__renderer").waitFor({ state: "visible" });
 
-    await expect(page).toHaveScreenshot("builder-multi-component.png", {
+    await expectScreenshot(page, "builder-multi-component.png", {
       maxDiffPixelRatio: 0.01,
     });
   });

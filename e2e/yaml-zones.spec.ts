@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { expectScreenshot } from "./screenshot";
 
 const BUILDER_URL = "/#/builder";
 
@@ -49,7 +50,7 @@ test("YAML preview shows diagram content", async ({ page }) => {
   // Fit view before screenshot
   await page.getByTitle("Fit view").first().click();
 
-  await expect(page).toHaveScreenshot("yaml-preview.png", {
+  await expectScreenshot(page, "yaml-preview.png", {
     maxDiffPixelRatio: 0.01,
   });
 });
@@ -115,7 +116,7 @@ test("YAML round-trip via import", async ({ page }) => {
   // Fit view before screenshot
   await page.getByTitle("Fit view").first().click();
 
-  await expect(page).toHaveScreenshot("yaml-roundtrip.png", {
+  await expectScreenshot(page, "yaml-roundtrip.png", {
     maxDiffPixelRatio: 0.01,
   });
 });
@@ -143,7 +144,7 @@ test("Add zone", async ({ page }) => {
   // Fit view before screenshot
   await page.getByTitle("Fit view").first().click();
 
-  await expect(page).toHaveScreenshot("zone-added.png", {
+  await expectScreenshot(page, "zone-added.png", {
     maxDiffPixelRatio: 0.01,
   });
 });
@@ -196,7 +197,7 @@ test("Delete zone", async ({ page }) => {
   // Fit view before screenshot
   await page.getByTitle("Fit view").first().click();
 
-  await expect(page).toHaveScreenshot("zone-deleted.png", {
+  await expectScreenshot(page, "zone-deleted.png", {
     maxDiffPixelRatio: 0.01,
   });
 });

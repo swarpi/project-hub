@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { expectScreenshot } from "./screenshot";
 
 const HUB_URL = "/";
 
@@ -19,7 +20,7 @@ test("Hub loads with all sections", async ({ page }) => {
     ).first()
   ).toBeVisible({ timeout: 10000 });
 
-  await expect(page).toHaveScreenshot("hub-full.png", {
+  await expectScreenshot(page, "hub-full.png", {
     fullPage: true,
     maxDiffPixelRatio: 0.01,
   });
@@ -147,7 +148,7 @@ test("Hub visual - workflows section", async ({ page }) => {
   if (isVisible) {
     await workflowsSection.scrollIntoViewIfNeeded();
 
-    await expect(page).toHaveScreenshot("hub-workflows.png", {
+    await expectScreenshot(page, "hub-workflows.png", {
       maxDiffPixelRatio: 0.01,
     });
   } else {
@@ -166,7 +167,7 @@ test("Hub visual - pipeline section", async ({ page }) => {
   if (isVisible) {
     await pipelineSection.scrollIntoViewIfNeeded();
 
-    await expect(page).toHaveScreenshot("hub-pipeline.png", {
+    await expectScreenshot(page, "hub-pipeline.png", {
       maxDiffPixelRatio: 0.01,
     });
   } else {
