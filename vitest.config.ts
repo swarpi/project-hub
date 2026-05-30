@@ -23,12 +23,12 @@ export default mergeConfig(
           "src/**/*.test.{ts,tsx}",
           "src/vite-env.d.ts",
           "src/main.tsx",
-          "src/lib/types.ts", // Type declarations only — no runtime code
+          "src/lib/types.ts",
+          "src/builder/components/Canvas.tsx",
+          "src/builder/nodes/ArchComponentNode.tsx",
+          "src/builder/nodes/TierZoneNode.tsx",
+          "src/builder/edges/ArchConnectionEdge.tsx",
         ],
-        // Canvas.tsx, ArchComponentNode.tsx, TierZoneNode.tsx, ArchConnectionEdge.tsx
-        // remain at 0% — excluded from unit testing per ADR-0005 (ReactFlow canvas
-        // components), covered by E2E tests. NOT added to exclude list; high coverage
-        // elsewhere compensates in the global average.
         reporter: ["text", "lcov", "html"],
         thresholds: { statements: 80, branches: 75, functions: 80, lines: 80 },
       },
